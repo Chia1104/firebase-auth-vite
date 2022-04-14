@@ -1,9 +1,12 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
-  <HelloWorld msg="Hello Vue 3 + Vite" />
+  <Nav />
+  <div class="mt-20">
+    <RouterView />
+  </div>
 </template>
-
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-
+<script>
+import Nav from "./components/Nav.vue";
+export default {
+  components: {Nav}
+}
 </script>
