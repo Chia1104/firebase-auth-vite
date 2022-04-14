@@ -1,29 +1,52 @@
-# Vite
+# Firebase Auth for Vite
 
-This directory is a brief example of a Vite/Vue.js site that can be deployed to Vercel with zero configuration.
+This project was created with [Vite](https://vitejs.dev/).
 
-While this project uses Vue.js, Vite supports many popular JS frameworks. [See all the supported frameworks](https://vitejs.dev/guide/#scaffolding-your-first-vite-project).
+This is a simple app using Firebase Auth to authenticate users, and using Vuex to manage state.
 
-## Deploy Your Own
+## Languages and Tools
 
-Deploy your own Vite project with Vercel.
+<div align="center">
+  <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank" rel="noreferrer"> 
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" alt="javascript" width="40" height="40"/> 
+  </a>
+  <a href="https://vuejs.org/" target="_blank" rel="noreferrer"> 
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/vuejs/vuejs-original-wordmark.svg" alt="vuejs" width="40" height="40"/> 
+  </a>
+  <a href="https://tailwindcss.com/" target="_blank" rel="noreferrer"> 
+    <img src="https://www.vectorlogo.zone/logos/tailwindcss/tailwindcss-icon.svg" alt="tailwind" width="40" height="40"/> 
+  </a>
+  <a href="https://firebase.google.com/" target="_blank" rel="noreferrer"> 
+    <img src="https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" alt="firebase" width="40" height="40"/> 
+  </a>
+</div>
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vercel/vercel/tree/main/examples/vite&template=vite)
+## Deployment
 
-_Live Example: https://vite-vue-template.vercel.app_
+### Vercel
+You can go here, [deployment](https://firebase-auth-vite.vercel.app/).
 
-### How We Created This Example
+## Features
+- [ ] Authentication
+- [ ] CI/CD
+- [ ] E2E Testing(with [Cypress](https://www.cypress.io/))
 
-To get started with Vue.js deployed with Vercel, you can use Vite (https://vitejs.dev/guide/#scaffolding-your-first-vite-project) to initialize the project:
+## Get Started
 
-```shell
-$ yarn create @vitejs/app
+In the project directory, you can run:
+
+Generate .env file, and add your Firebase project's credentials
+```
+$ cp .env.example .env
 ```
 
-### Deploying From Your Terminal
-
-You can deploy your new Vite project with a single command from your terminal using [Vercel CLI](https://vercel.com/download):
-
-```shell
-$ vercel
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+$ yarn
+$ yarn dev
+```
+Builds the app for production to the `build` folder.
+```
+$ yarn build
 ```
