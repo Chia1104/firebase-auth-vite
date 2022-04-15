@@ -1,7 +1,7 @@
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut , updatePassword } from "firebase/auth";
-import { auth } from '../../firebase/config';
+import { firebaseAuth } from '../../firebase/config';
 
-export const signIn = (email, password) => signInWithEmailAndPassword(auth, email, password)
+export const signIn = (email, password) => signInWithEmailAndPassword(firebaseAuth, email, password)
     .then((userCredential) => {
         return userCredential.user;
     })
@@ -9,7 +9,7 @@ export const signIn = (email, password) => signInWithEmailAndPassword(auth, emai
         return error.message;
     })
 
-export const register = (email, password) => createUserWithEmailAndPassword(auth, email, password)
+export const register = (email, password) => createUserWithEmailAndPassword(firebaseAuth, email, password)
     .then((userCredential) => {
         return userCredential.user;
     })
@@ -17,7 +17,7 @@ export const register = (email, password) => createUserWithEmailAndPassword(auth
         return error.message;
     })
 
-export const singOut = () => signOut(auth)
+export const singOut = () => signOut(firebaseAuth)
     .then(() => {
         return true;
     })

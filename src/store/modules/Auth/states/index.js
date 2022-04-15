@@ -1,4 +1,4 @@
-export const firebaseInitState = {
+export const authInitState = {
   user: {
     isLoading: false,
     isError: false,

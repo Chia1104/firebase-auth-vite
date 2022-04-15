@@ -1,6 +1,6 @@
 import { signIn } from "../../../../api";
 
-export const signInAction = () => async (context, { email, password }) => {
+export const signInAction = ({ email, password }) => async (context) => {
     console.log("Begin user request");
     context.commit("beginUserRequest");
     try {

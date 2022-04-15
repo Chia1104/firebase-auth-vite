@@ -2,30 +2,31 @@
 import { useStore } from 'vuex';
 
 const store = useStore()
-const user = store.state.firebaseModule.user
-
+const authUser = store.state.auth.user
 const emailExample = 'test@test.com'
 const passwordExample = 'test1234'
 
 const signIn = () => {
+  console.log('signIn')
   store.dispatch('signInAction', {
     email: emailExample,
     password: passwordExample
   })
 }
+
 </script>
 
 <template>
-  <form @submit.prevent="signIn">
+  <form class="container mx-auto flex-col text-center" @submit.prevent="signIn">
     <h1>Login</h1>
     <button class="bg-amber-400" >Sign In</button>
-    <p class="text-blue-400" v-if="user.isLoading">
+    <p class="text-blue-400" v-if="authUser.isLoading">
       LOADING
     </p>
-    <p class="text-red-500" v-if="user.isError">
+    <p class="text-red-500" v-if="authUser.isError">
       ERROR!!!
     </p>
-    <p v-text="user.data"/>
+    <p v-text="authUser.data"/>
   </form>
 </template>
 

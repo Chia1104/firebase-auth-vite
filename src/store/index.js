@@ -1,11 +1,11 @@
 import { createStore } from "vuex";
 import { countExample } from "./modules/CountExample";
-import { firebaseModule } from "./modules/firebase";
+import { auth } from "./modules/Auth";
 
 const store = createStore({
   modules: {
     countExample: countExample,
-    firebaseModule: firebaseModule
+    auth: auth,
   }
 });
 

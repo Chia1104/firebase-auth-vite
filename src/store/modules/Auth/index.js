@@ -1,9 +1,9 @@
-import { firebaseInitState } from "./states";
+import { authInitState } from "./states";
 import { beginUserRequest, successUserRequest, failUserRequest } from "./mutations";
 import { signInAction } from "./actions";
 
-export const firebaseModule = {
-    state: () => firebaseInitState,
+export const auth = {
+    state: () => authInitState,
     mutations: { beginUserRequest, successUserRequest, failUserRequest },
     actions: { signInAction },
 }
