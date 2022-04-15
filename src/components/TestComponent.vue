@@ -1,19 +1,24 @@
 <script setup>
-
 import { defineProps, reactive } from 'vue'
+import { useStore } from 'vuex';
 
 defineProps({
   msg: String
 })
 
-const state = reactive({ count: 0 })
+const store = useStore()
+const state = store.state
+
+const increment = () => {
+  store.commit("increment");
+};
 
 </script>
 
 <template>
 
   <h1 class="test-color">{{ msg }}</h1>
-  <button type="button" @click="state.count++">count is: <p>{{ state.count }}</p></button>
+  <button type="button" @click="increment">count is: <p v-text="state.count" /></button>
 
 </template>
 
