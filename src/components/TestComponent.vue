@@ -7,7 +7,7 @@ defineProps({
 })
 
 const store = useStore()
-const state = store.state
+const countExample = store.state.countExample
 
 const increment = () => {
   store.dispatch('incrementAction')
@@ -18,7 +18,7 @@ const increment = () => {
 <template>
 
   <h1 class="test-color">{{ msg }}</h1>
-  <button type="button" @click="increment">count is: <p v-text="state.testCount.count" /></button>
+  <button type="button" @click="increment">count is: <p v-text="countExample.count" /></button>
 
 </template>
 

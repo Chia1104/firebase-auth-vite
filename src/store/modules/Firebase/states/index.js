@@ -3,6 +3,6 @@ export const firebaseInitState = {
     isLoading: false,
     isError: false,
     errorMessage: String,
-    data: Array,
+    data: [],
   },
 };

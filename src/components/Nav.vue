@@ -17,7 +17,13 @@
           <router-link to="/" class="text-primary mr-2">
             Home
           </router-link>
-          <router-link to="/test" class="text-primary">
+          <router-link to="/login" class="text-primary mr-2">
+            Login
+          </router-link>
+          <router-link to="/register" class="text-primary mr-2">
+            Register
+          </router-link>
+          <router-link to="/testpage" class="text-primary">
             Test
           </router-link>
         </div>

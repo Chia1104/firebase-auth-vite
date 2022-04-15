@@ -7,7 +7,7 @@ import NotFoundPage from "../pages/exceptions/NotFoundPage.vue";
 
 const routes = [
     {
-        path: "/test", component: TestPage
+        path: "/testpage", component: TestPage
     },
     {
         path: "/", component: HomePage
