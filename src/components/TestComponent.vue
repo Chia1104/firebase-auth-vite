@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, reactive } from 'vue'
+import { defineProps } from 'vue'
 import { useStore } from 'vuex';
 
 defineProps({
@@ -10,7 +10,7 @@ const store = useStore()
 const state = store.state
 
 const increment = () => {
-  store.commit("increment");
+  store.dispatch('incrementAction')
 };
 
 </script>
@@ -18,7 +18,7 @@ const increment = () => {
 <template>
 
   <h1 class="test-color">{{ msg }}</h1>
-  <button type="button" @click="increment">count is: <p v-text="state.count" /></button>
+  <button type="button" @click="increment">count is: <p v-text="state.testCount.count" /></button>
 
 </template>
 

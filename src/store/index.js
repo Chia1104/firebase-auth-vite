@@ -1,15 +1,16 @@
 import { createStore } from "vuex";
-import { increment } from "../mutations"
+import { incrementInitialState, incrementMutation, incrementAction } from "./modules/TestModule";
 
-const initialState = {
-  count: 0
-};
+const testCount = {
+  state: () => incrementInitialState,
+  mutations: { incrementMutation },
+  actions: { incrementAction }
+}
 
 const store = createStore({
-  state: initialState,
-  mutations: {
-    increment
-  },
+  modules: {
+    testCount: testCount,
+  }
 });
 
 export default store;
