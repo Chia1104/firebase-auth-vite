@@ -6,13 +6,13 @@ import router from './router'
 import store from './store';
 
 const firebaseConfig = {
-    apiKey: import.meta.env.MODE.API_KEY,
-    authDomain: import.meta.env.MODE.AUTH_DOMAIN,
-    projectId: import.meta.env.MODE.PROJECT_ID,
-    storageBucket: import.meta.env.MODE.STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.MODE.MESSAGING_SENDER_ID,
-    appId: import.meta.env.MODE.APP_ID,
-    measurementId: import.meta.env.MODE.MEASUREMENT_ID
+    apiKey: `${import.meta.env.API_KEY}`,
+    authDomain: `${import.meta.env.AUTH_DOMAIN}`,
+    projectId: `${import.meta.env.PROJECT_ID}`,
+    storageBucket: `${import.meta.env.STORAGE_BUCKET}`,
+    messagingSenderId: `${import.meta.env.MESSAGING_SENDER_ID}`,
+    appId: `${import.meta.env.APP_ID}`,
+    measurementId: `${import.meta.env.MEASUREMENT_ID}`
 };
 
 firebase.initializeApp(firebaseConfig);

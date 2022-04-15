@@ -1,7 +1,5 @@
-<script>
-export default {
-  name: "RegisterPage"
-}
+<script setup>
+
 </script>
 
 <template>

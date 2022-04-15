@@ -1,7 +1,5 @@
-<script>
-export default {
-  name: "LoginPage"
-}
+<script setup>
+
 </script>
 
 <template>

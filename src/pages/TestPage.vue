@@ -1,9 +1,6 @@
-<script>
+<script setup>
 import TestComponent from "../components/TestComponent.vue";
-export default {
-  name: "TestPage",
-  components: {TestComponent}
-}
+
 </script>
 
 <template>

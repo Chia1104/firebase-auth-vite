@@ -1,15 +1,11 @@
 import { createStore } from "vuex";
-import { incrementInitialState, incrementMutation, incrementAction } from "./modules/TestModule";
-
-const testCount = {
-  state: () => incrementInitialState,
-  mutations: { incrementMutation },
-  actions: { incrementAction }
-}
+import { testCount } from "./modules/testModule";
+import { firebaseModule } from "./modules/firebase";
 
 const store = createStore({
   modules: {
     testCount: testCount,
+    firebaseModule: firebaseModule
   }
 });
 

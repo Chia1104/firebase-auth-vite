@@ -1,7 +1,5 @@
-<script>
-export default {
-  name: "Nav"
-}
+<script setup>
+
 </script>
 
 <template>

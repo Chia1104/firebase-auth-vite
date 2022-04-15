@@ -3,6 +3,7 @@ import TestPage from "../pages/TestPage.vue";
 import HomePage from "../pages/HomePage.vue";
 import LoginPage from "../pages/LoginPage.vue";
 import RegisterPage from "../pages/RegisterPage.vue";
+import NotFoundPage from "../pages/exceptions/NotFoundPage.vue";
 
 const routes = [
     {
@@ -16,6 +17,9 @@ const routes = [
     },
     {
         path: "/register", component: RegisterPage
+    },
+    {
+        path: "/:catchAll(.*)", component: NotFoundPage
     }
 ]
 export default createRouter({
