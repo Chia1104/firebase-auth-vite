@@ -1,9 +1,29 @@
 import { authInitState } from "./states";
-import { beginUserRequest, successUserRequest, failUserRequest } from "./mutations";
-import { signInAction } from "./actions";
+import {
+    beginSignIn,
+    successSignIn,
+    failSignIn,
+    beginRequestUser,
+    successRequestUser,
+    failRequestUser,
+} from "./mutations";
+import {
+    signInAction,
+    getUserAction
+} from "./actions";
 
 export const auth = {
     state: () => authInitState,
-    mutations: { beginUserRequest, successUserRequest, failUserRequest },
-    actions: { signInAction },
+    mutations: {
+        beginSignIn,
+        successSignIn,
+        failSignIn,
+        beginRequestUser,
+        successRequestUser,
+        failRequestUser,
+    },
+    actions: {
+        signInAction,
+        getUserAction
+    },
 }

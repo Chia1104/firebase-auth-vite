@@ -1,15 +1,35 @@
-export const beginUserRequest = ( state ) => {
-    state.user.isLoading = true
+export const beginSignIn = ( state ) => {
+    state.signIn.isLoading = true
 }
 
-export const successUserRequest = ( state, payload ) => {
-    state.user.isLoading = false
-    state.user.isError = false
-    state.user.data = payload
+export const successSignIn = ( state, payload ) => {
+    state.userDetails.isSignIn = true
+    state.signIn.isLoading = false
+    state.signIn.isError = false
+    state.signIn.data = payload
 }
 
-export const failUserRequest = ( state, payload ) => {
-    state.user.isLoading = false
-    state.user.isError = true
-    state.user.errorMessage = payload
+export const failSignIn = ( state, payload ) => {
+    state.userDetails.isSignIn = false
+    state.signIn.isLoading = false
+    state.signIn.isError = true
+    state.signIn.errorMessage = payload
+}
+
+export const beginRequestUser = ( state ) => {
+    state.userDetails.isLoading = true
+}
+
+export const successRequestUser = ( state, payload ) => {
+    state.userDetails.isSignIn = true
+    state.userDetails.isLoading = false
+    state.userDetails.isError = false
+    state.userDetails.userData = payload
+}
+
+export const failRequestUser = ( state, payload ) => {
+    state.userDetails.isSignIn = false
+    state.userDetails.isLoading = false
+    state.userDetails.isError = true
+    state.userDetails.errorMessage = payload
 }
