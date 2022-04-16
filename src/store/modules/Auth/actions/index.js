@@ -1,13 +1,13 @@
 import { signIn } from "../../../../api";
 
-export const signInAction = ({ email, password }) => async (context) => {
-    console.log("Begin user request");
+export const signInAction = async (context, {email, password}) => {
+    if (!email || !password) return context.commit("failUserRequest", "Email and password are required");
     context.commit("beginUserRequest");
     try {
         const response = await signIn(email, password);
-        if (response) context.commit("successUserRequest", response);
-        else context.commit("failUserRequest", 'Could not complete login!!');
+        if (response) return context.commit("successUserRequest", response);
+        else return context.commit("failUserRequest", 'Could not complete login!!');
     } catch (error) {
-        context.commit("failUserRequest", error);
+        return context.commit("failUserRequest", error);
     }
 };

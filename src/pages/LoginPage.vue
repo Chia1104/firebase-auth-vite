@@ -6,13 +6,7 @@ const authUser = store.state.auth.user
 const emailExample = 'test@test.com'
 const passwordExample = 'test1234'
 
-const signIn = () => {
-  console.log('signIn')
-  store.dispatch('signInAction', {
-    email: emailExample,
-    password: passwordExample
-  })
-}
+const signIn = () => store.dispatch('signInAction', { email: emailExample, password: passwordExample })
 
 </script>
 
@@ -23,10 +17,8 @@ const signIn = () => {
     <p class="text-blue-400" v-if="authUser.isLoading">
       LOADING
     </p>
-    <p class="text-red-500" v-if="authUser.isError">
-      ERROR!!!
-    </p>
-    <p v-text="authUser.data"/>
+    <p class="text-red-500" v-if="authUser.isError" v-text="authUser.errorMessage" />
+    <p v-text="authUser.data?.email"/>
   </form>
 </template>
 
