@@ -6,7 +6,7 @@ export const signIn = (email, password) => signInWithEmailAndPassword(firebaseAu
         return userCredential.user;
     })
     .catch((error) => {
-        return error.message;
+        throw error.code;
     })
 
 export const register = (email, password) => createUserWithEmailAndPassword(firebaseAuth, email, password)
@@ -14,7 +14,7 @@ export const register = (email, password) => createUserWithEmailAndPassword(fire
         return userCredential.user;
     })
     .catch((error) => {
-        return error.message;
+        throw error.code;
     })
 
 export const singOut = () => signOut(firebaseAuth)
@@ -22,7 +22,7 @@ export const singOut = () => signOut(firebaseAuth)
         return true;
     })
     .catch((error) => {
-        return error.message;
+        throw error.code;
     })
 
 export const changePassword = (user, password) => updatePassword(user, password)
@@ -30,5 +30,5 @@ export const changePassword = (user, password) => updatePassword(user, password)
         return true;
     })
     .catch((error) => {
-        return error.message;
+        throw error.code;
     })

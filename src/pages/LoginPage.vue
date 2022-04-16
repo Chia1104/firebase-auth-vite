@@ -3,8 +3,8 @@ import { useStore } from 'vuex';
 
 const store = useStore()
 const authUser = store.state.auth.user
-const emailExample = 'test@test.com'
-const passwordExample = 'test1234'
+const emailExample = 'test@test.co'
+const passwordExample = 'test123'
 
 const signIn = () => store.dispatch('signInAction', { email: emailExample, password: passwordExample })
 
