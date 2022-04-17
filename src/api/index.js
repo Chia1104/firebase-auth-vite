@@ -9,6 +9,18 @@ export const getUser = () => {
     }
 }
 
+export const getUserObservable = () => {
+    try {
+        firebaseAuth.onAuthStateChanged(
+            (user) => {
+                return user;
+            }
+        );
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const signIn = (email, password) => signInWithEmailAndPassword(firebaseAuth, email, password)
     .then((userCredential) => {
         return userCredential.user;

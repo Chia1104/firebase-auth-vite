@@ -10,13 +10,7 @@ export const authInitState = {
     isLoading: false,
     isError: false,
     errorMessage: '',
-    userData: {
-      displayName: '',
-      email: '',
-      photoURL: '',
-      uid: '',
-      emailVerified: false,
-    },
+    userData: [],
   },
   register: {
     isLoading: false,

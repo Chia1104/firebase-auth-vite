@@ -6,10 +6,14 @@ import {
     beginRequestUser,
     successRequestUser,
     failRequestUser,
+    successLogOut,
+    failLogOut,
+    setUserData,
 } from "./mutations";
 import {
     signInAction,
-    getUserAction
+    getUserAction,
+    logOutAction,
 } from "./actions";
 
 export const auth = {
@@ -21,9 +25,13 @@ export const auth = {
         beginRequestUser,
         successRequestUser,
         failRequestUser,
+        successLogOut,
+        failLogOut,
+        setUserData,
     },
     actions: {
         signInAction,
-        getUserAction
+        getUserAction,
+        logOutAction,
     },
 }

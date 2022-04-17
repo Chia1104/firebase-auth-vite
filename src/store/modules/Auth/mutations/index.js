@@ -33,3 +33,14 @@ export const failRequestUser = ( state, payload ) => {
     state.userDetails.isError = true
     state.userDetails.errorMessage = payload
 }
+
+export const successLogOut = ( state ) => {
+    state.userDetails.isSignIn = false
+    state.userDetails.userData = []
+}
+
+export const failLogOut = ( state, payload ) => {
+    state.userDetails.isSignIn = true
+    state.userDetails.isError = true
+    state.userDetails.errorMessage = payload
+}

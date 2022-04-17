@@ -3,7 +3,8 @@ import {
     getUser,
     register,
     logOut,
-    changePassword
+    changePassword,
+    getUserObservable,
 } from "../../../../api";
 
 export const signInAction = async (context, {email, password}) => {
@@ -22,15 +23,18 @@ export const getUserAction = async (context) => {
     context.commit("beginRequestUser");
     try {
         const response = await getUser();
-        if (response) return context.commit("successRequestUser", {
-            displayName: response.displayName,
-            email: response.email,
-            photoURL: response.photoURL,
-            uid: response.uid,
-            emailVerified: response.emailVerified,
-        });
-        else return context.commit("failRequestUser", 'You are not logged in');
+        if (response) context.commit("successRequestUser", response);
+        else context.commit("failRequestUser", 'Could not complete request!!');
     } catch (error) {
-        return context.commit("failRequestUser", error);
+        context.commit("failRequestUser", error);
+    }
+};
+
+export const logOutAction = async (context) => {
+    try {
+        const response = await logOut();
+        context.commit("successLogOut", response);
+    } catch (error) {
+        context.commit("failLogOut", error);
     }
 };

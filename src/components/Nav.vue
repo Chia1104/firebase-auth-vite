@@ -1,15 +1,21 @@
 <script setup>
-import {firebaseAuth} from "../../firebase/config";
+import { firebaseAuth } from '../../firebase/config';
+import { useStore } from "vuex";
+import { watchEffect } from "vue";
 
-const getUser = () => {
-  try {
-    const user = firebaseAuth.currentUser;
-    if(!user) return false;
-    else return user;
-  } catch (error) {
-    return false;
+const store = useStore()
+const userState = store.state.auth.userDetails
+
+const firebaseUser = () => firebaseAuth.onAuthStateChanged(user => {
+  if (user) {
+    store.commit('successRequestUser', user)
+  } else {
+    store.commit('failRequestUser', 'Fail to get user')
   }
-}
+});
+
+watchEffect(firebaseUser)
+
 
 </script>
 
@@ -24,19 +30,19 @@ const getUser = () => {
         </div>
       </div>
       <div class="md:flex items-center w-[20%] sm:hidden justify-center">
-        <div v-if="getUser">
-          <router-link to="/" class="text-primary mr-2">
+        <div v-if="userState.isSignIn">
+          <router-link to="/" class="text-primary mr-2 hover:text-[#FF9000] transition ease-in-out">
             Home
           </router-link>
-          <router-link to="/profile" class="text-primary mr-2">
+          <router-link to="/profile" class="text-primary mr-2 hover:text-[#FF9000] transition ease-in-out">
             Profile
           </router-link>
         </div>
-        <div v-if="!getUser">
-          <router-link to="/login" class="text-primary mr-2">
+        <div v-else>
+          <router-link to="/login" class="text-primary mr-2 hover:text-[#FF9000] transition ease-in-out">
             Login
           </router-link>
-          <router-link to="/register" class="text-primary mr-2">
+          <router-link to="/register" class="text-primary mr-2 hover:text-[#FF9000] transition ease-in-out">
             Register
           </router-link>
         </div>
