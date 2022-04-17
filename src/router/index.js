@@ -5,13 +5,27 @@ import ProfilePage from "../pages/ProfilePage.vue";
 import LoginPage from "../pages/LoginPage.vue";
 import RegisterPage from "../pages/RegisterPage.vue";
 import NotFoundPage from "../pages/exceptions/NotFoundPage.vue";
+import { firebaseAuth } from '../../firebase/config';
+
+const getUser = () => {
+    try {
+        const user = firebaseAuth.currentUser;
+        if(!user) return false;
+        else return user;
+    } catch (error) {
+        return false;
+    }
+}
 
 const routes = [
     {
-        path: "/testpage", component: TestPage
+        path: "/testpage",
+        name: 'TestPage',
+        component: TestPage
     },
     {
         path: "/home",
+        name: 'HomePage',
         component: HomePage,
         meta: {
             requiresAuth: true
@@ -19,6 +33,7 @@ const routes = [
     },
     {
         path: "/profile",
+        name: 'ProfilePage',
         component: ProfilePage,
         meta: {
             requiresAuth: true
@@ -30,10 +45,12 @@ const routes = [
     },
     {
         path: "/login",
+        name: 'LoginPage',
         component: LoginPage
     },
     {
         path: "/register",
+        name: 'RegisterPage',
         component: RegisterPage
     },
     {
@@ -47,10 +64,11 @@ const router = createRouter({
     routes
 });
 
-// router.beforeEach((to, from) => {
-//     // ...
-//     // 返回 false 以取消导航
-//     return false
-// })
+router.beforeEach((to, from, next) => {
+    if (to.name !== 'LoginPage' && !getUser) next({ name: 'LoginPage' })
+    else if (to.name === 'LoginPage' && getUser) next({ name: 'HomePage' })
+    else if (to.name === 'RegisterPage' && getUser) next({ name: 'HomePage' })
+    else next()
+})
 
 export default router;

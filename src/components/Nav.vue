@@ -1,14 +1,15 @@
 <script setup>
-import { useStore } from 'vuex';
-import { computed, onActivated } from "vue";
+import {firebaseAuth} from "../../firebase/config";
 
-const store = useStore()
-const userState = computed(() => store.state.auth.userDetails)
-const getUser = () => store.dispatch('getUserAction')
-
-onActivated (() => {
-  getUser()
-})
+const getUser = () => {
+  try {
+    const user = firebaseAuth.currentUser;
+    if(!user) return false;
+    else return user;
+  } catch (error) {
+    return false;
+  }
+}
 
 </script>
 
@@ -23,15 +24,15 @@ onActivated (() => {
         </div>
       </div>
       <div class="md:flex items-center w-[20%] sm:hidden justify-center">
-        <div v-if="userState.isSignIn">
+        <div v-if="getUser">
           <router-link to="/" class="text-primary mr-2">
             Home
           </router-link>
           <router-link to="/profile" class="text-primary mr-2">
-            {{ userState.userData.displayName }}
+            Profile
           </router-link>
         </div>
-        <div v-if="!userState.isSignIn">
+        <div v-if="!getUser">
           <router-link to="/login" class="text-primary mr-2">
             Login
           </router-link>
