@@ -1,10 +1,10 @@
 <script setup>
 import { firebaseAuth } from '../../firebase/config';
 import { useStore } from "vuex";
-import { watchEffect } from "vue";
+import { watchEffect, computed } from "vue";
 
 const store = useStore()
-const userState = store.state.auth.userDetails
+const userState = computed(() => store.state.auth.userDetails)
 
 const firebaseUser = () => firebaseAuth.onAuthStateChanged(user => {
   if (user) {
@@ -15,7 +15,6 @@ const firebaseUser = () => firebaseAuth.onAuthStateChanged(user => {
 });
 
 watchEffect(firebaseUser)
-
 
 </script>
 

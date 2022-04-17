@@ -16,6 +16,24 @@ export const failSignIn = ( state, payload ) => {
     state.signIn.errorMessage = payload
 }
 
+export const beginRegister = ( state ) => {
+    state.register.isLoading = true
+}
+
+export const successRegister = ( state, payload ) => {
+    state.userDetails.isSignIn = true
+    state.register.isLoading = false
+    state.register.isError = false
+    state.register.data = payload
+}
+
+export const failRegister = ( state, payload ) => {
+    state.userDetails.isSignIn = false
+    state.register.isLoading = false
+    state.register.isError = true
+    state.register.errorMessage = payload
+}
+
 export const beginRequestUser = ( state ) => {
     state.userDetails.isLoading = true
 }

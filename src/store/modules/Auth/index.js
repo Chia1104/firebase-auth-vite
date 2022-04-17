@@ -8,11 +8,15 @@ import {
     failRequestUser,
     successLogOut,
     failLogOut,
+    beginRegister,
+    successRegister,
+    failRegister,
 } from "./mutations";
 import {
     signInAction,
     getUserAction,
     logOutAction,
+    registerAction,
 } from "./actions";
 
 export const auth = {
@@ -26,10 +30,14 @@ export const auth = {
         failRequestUser,
         successLogOut,
         failLogOut,
+        beginRegister,
+        successRegister,
+        failRegister,
     },
     actions: {
         signInAction,
         getUserAction,
         logOutAction,
+        registerAction,
     },
 }

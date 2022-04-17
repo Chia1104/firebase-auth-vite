@@ -19,6 +19,18 @@ export const signInAction = async (context, {email, password}) => {
     }
 };
 
+export const registerAction = async (context, {email, password}) => {
+    if (email === '' || password === '') return context.commit("failRegister", "Email, password are required");
+    context.commit("beginRegister");
+    try {
+        const response = await register(email, password);
+        if (response) return context.commit("successRegister", response);
+        else return context.commit("failRegister", 'Could not complete registration!!');
+    } catch (error) {
+        return context.commit("failRegister", error);
+    }
+};
+
 export const getUserAction = async (context) => {
     context.commit("beginRequestUser");
     try {

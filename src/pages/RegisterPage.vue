@@ -1,14 +1,23 @@
 <script setup>
+import RegisterCard from '../components/RegisterCard.vue'
+import Message from "../components/Message.vue";
+import { useStore } from "vuex";
+import { computed } from "vue";
+
+const store = useStore()
+const registerState = computed(() => store.state.auth.register)
+const message = registerState.errorMessage
 
 </script>
 
 <template>
-  <div>
-    Register
+  <div class="flex flex-col items-center">
+    <div class="container mx-auto">
+      <RegisterCard />
+    </div>
+    <Message
+        :warning="registerState.isError"
+        warningMsg="Invalid Email or password"
+    />
   </div>
-
 </template>
-
-<style scoped>
-
-</style>

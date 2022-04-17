@@ -1,9 +1,10 @@
 <script setup>
+import { computed } from 'vue';
 import { useStore } from 'vuex';
 import router from "../router";
 
 const store = useStore()
-const userState = store.state.auth.userDetails
+const userState = computed(() => store.state.auth.userDetails)
 
 const logOut = () => {
   store.dispatch('logOutAction')
