@@ -62,3 +62,20 @@ export const failLogOut = ( state, payload ) => {
     state.userDetails.isError = true
     state.userDetails.errorMessage = payload
 }
+
+export const beginChangePassword = ( state ) => {
+    state.changePassword.isLoading = true
+}
+
+export const successChangePassword = ( state ) => {
+    state.changePassword.isLoading = false
+    state.changePassword.isError = false
+    state.changePassword.isSuccess = true
+}
+
+export const failChangePassword = ( state, payload ) => {
+    state.changePassword.isLoading = false
+    state.changePassword.isError = true
+    state.changePassword.isSuccess = false
+    state.changePassword.errorMessage = payload
+}

@@ -76,12 +76,12 @@ const validateForm = () => {
       </span>
       <p v-if="localState.c_passwordError" class="text-red-500 text-xs italic text-left">Confirm password is not equal</p>
     </div>
-    <button class="bg-[#2B2E4A] rounded-full drop-shadow-lg text-white text-md h-9 w-[85px] opacity-40" :class="{ 'ableSignIn': !localState.disableRegister }" :disabled="localState.disableRegister">Register</button>
+    <button class="bg-[#2B2E4A] rounded-full drop-shadow-lg text-white text-md h-9 w-[85px] opacity-40" :class="{ 'ableRegister': !localState.disableRegister }" :disabled="localState.disableRegister">Register</button>
   </form>
 </template>
 
 <style scoped lang="postcss">
-.ableSignIn {
+.ableRegister {
   @apply hover:bg-[#FF9000] transition ease-in-out opacity-100
 }
 </style>

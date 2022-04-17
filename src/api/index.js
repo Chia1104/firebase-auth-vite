@@ -1,6 +1,8 @@
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut , updatePassword } from "firebase/auth";
 import { firebaseAuth } from '../../firebase/config';
 
+const user = firebaseAuth.currentUser;
+
 export const getUser = () => {
     try {
         return firebaseAuth.currentUser;
@@ -45,7 +47,7 @@ export const logOut = () => signOut(firebaseAuth)
         throw error.code;
     })
 
-export const changePassword = (user, password) => updatePassword(user, password)
+export const changePassword = (password) => updatePassword(user, password)
     .then(() => {
         return true;
     })

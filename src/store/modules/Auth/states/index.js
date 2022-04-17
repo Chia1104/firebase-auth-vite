@@ -18,4 +18,10 @@ export const authInitState = {
     errorMessage: '',
     data: [],
   },
+  changePassword: {
+    isLoading: false,
+    isError: false,
+    isSuccess: false,
+    errorMessage: '',
+  },
 };

@@ -50,3 +50,16 @@ export const logOutAction = async (context) => {
         context.commit("failLogOut", error);
     }
 };
+
+export const changePasswordAction = async (context, {oldPassword, newPassword}) => {
+    if (oldPassword === '' || newPassword === '') return context.commit("failChangePassword", "Old and new password are required");
+    if (newPassword === oldPassword) return context.commit("failChangePassword", "New password must be different from old password");
+    context.commit("beginChangePassword");
+    try {
+        const response = await changePassword(newPassword);
+        if (response) context.commit("successChangePassword", response);
+        else context.commit("failChangePassword", 'Could not complete change password!!');
+    } catch (error) {
+        context.commit("failChangePassword", error);
+    }
+};

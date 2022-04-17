@@ -14,7 +14,7 @@ const logOut = () => {
 </script>
 
 <template>
-  <div class="flex-col text-center bg-white md:w-[75%] rounded-xl shadow-lg mx-auto sm:w-full relative pb-5">
+  <div class="flex-col text-center bg-white md:w-[75%] rounded-xl shadow-lg mx-auto sm:w-full relative pb-5 mb-8">
     <div class="overflow-hidden w-full h-full">
       <img class="rounded-tl-xl rounded-tr-xl h-[300px] w-full top-0 left-0 " src="../assets/portfolio-1.jpg"  alt="portfolio"/>
     </div>

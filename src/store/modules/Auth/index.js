@@ -11,12 +11,16 @@ import {
     beginRegister,
     successRegister,
     failRegister,
+    beginChangePassword,
+    successChangePassword,
+    failChangePassword,
 } from "./mutations";
 import {
     signInAction,
     getUserAction,
     logOutAction,
     registerAction,
+    changePasswordAction
 } from "./actions";
 
 export const auth = {
@@ -33,11 +37,15 @@ export const auth = {
         beginRegister,
         successRegister,
         failRegister,
+        beginChangePassword,
+        successChangePassword,
+        failChangePassword,
     },
     actions: {
         signInAction,
         getUserAction,
         logOutAction,
         registerAction,
+        changePasswordAction
     },
 }
