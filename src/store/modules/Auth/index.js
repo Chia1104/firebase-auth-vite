@@ -8,7 +8,6 @@ import {
     failRequestUser,
     successLogOut,
     failLogOut,
-    setUserData,
 } from "./mutations";
 import {
     signInAction,
@@ -27,7 +26,6 @@ export const auth = {
         failRequestUser,
         successLogOut,
         failLogOut,
-        setUserData,
     },
     actions: {
         signInAction,
