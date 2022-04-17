@@ -2,10 +2,9 @@
 import RegisterCard from '../components/RegisterCard.vue'
 import Message from "../components/Message.vue";
 import { useStore } from "vuex";
-import { computed } from "vue";
 
 const store = useStore()
-const registerState = computed(() => store.state.auth.register)
+const registerState = store.state.auth.register
 const message = registerState.errorMessage
 
 </script>
