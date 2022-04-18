@@ -13,6 +13,6 @@ const firebaseConfig = {
 
 initializeApp(firebaseConfig)
 const firebaseAuth = getAuth()
-console.debug('firebaseAuth', firebaseAuth)
+// console.debug('firebaseAuth', firebaseAuth)
 
 export { firebaseAuth }

@@ -11,6 +11,10 @@ const logOut = () => {
   router.push('/login')
 }
 
+const showChangePassword = () => {
+  return store.dispatch('activeChangePasswordSheetAction')
+}
+
 </script>
 
 <template>
@@ -25,7 +29,7 @@ const logOut = () => {
       <h1 class="text-3xl text-left ml-5 mb-7" v-text="userState.userData.email" />
       <div class="text-center mr-5 flex justify-end">
         <button class="bg-[#2B2E4A] rounded-full drop-shadow-lg text-white text-md h-9 w-[85px] hover:bg-[#FF9000] transition ease-in-out mr-5" @click="logOut">LogOut</button>
-        <button class="bg-[#2B2E4A] rounded-full drop-shadow-lg text-white text-md h-9 w-[190px] hover:bg-[#FF9000] transition ease-in-out" @click="showTemplate">Change Password</button>
+        <button class="bg-[#2B2E4A] rounded-full drop-shadow-lg text-white text-md h-9 w-[190px] hover:bg-[#FF9000] transition ease-in-out" @click="showChangePassword">Change Password</button>
       </div>
     </div>
   </div>

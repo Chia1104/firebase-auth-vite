@@ -4,7 +4,6 @@ import {
     register,
     logOut,
     changePassword,
-    getUserObservable,
     reAuthenticate,
 } from "../../../../api";
 

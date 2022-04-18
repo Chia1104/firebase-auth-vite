@@ -65,12 +65,12 @@ export const logOut = () => signOut(firebaseAuth)
 export const changePassword = (password) => {
     const user = firebaseAuth.currentUser;
     return updatePassword(user, password)
-        .then((r) => {
-            console.debug(r);
-            return r;
+        .then(() => {
+            // console.debug(r);
+            return true;
         })
         .catch((error) => {
-            console.debug(error);
+            // console.debug(error);
             throw error;
         })
 }
