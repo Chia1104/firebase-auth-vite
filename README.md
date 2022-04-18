@@ -27,7 +27,7 @@ This is a simple app using Firebase Auth to authenticate users, and using Vuex t
 You can go here, [deployment](https://firebase-auth-vite.vercel.app/).
 
 ## Features
-- [ ] Authentication
+- [X] Authentication
 - [ ] CI/CD
 - [ ] E2E Testing(with [Cypress](https://www.cypress.io/))
 

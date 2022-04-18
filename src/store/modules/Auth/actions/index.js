@@ -5,6 +5,7 @@ import {
     logOut,
     changePassword,
     getUserObservable,
+    reAuthenticate,
 } from "../../../../api";
 
 export const signInAction = async (context, {email, password}) => {
@@ -56,10 +57,13 @@ export const changePasswordAction = async (context, {oldPassword, newPassword}) 
     if (newPassword === oldPassword) return context.commit("failChangePassword", "New password must be different from old password");
     context.commit("beginChangePassword");
     try {
-        const response = await changePassword(newPassword);
-        if (response) context.commit("successChangePassword", response);
-        else context.commit("failChangePassword", 'Could not complete change password!!');
-    } catch (error) {
-        context.commit("failChangePassword", error);
+        const auth = reAuthenticate(oldPassword);
+        if (auth) {
+            const isChange = await changePassword(newPassword);
+            if (!isChange) return context.commit("failChangePassword", "Could not change password");
+            else return context.commit("successChangePassword");
+        } else context.commit("failChangePassword", 'Could not complete change password!!');
+    } catch (e) {
+        return context.commit("failChangePassword", e);
     }
 };

@@ -1,7 +1,5 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut , updatePassword } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut , updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { firebaseAuth } from '../../firebase/config';
-
-const user = firebaseAuth.currentUser;
 
 export const getUser = () => {
     try {
@@ -21,6 +19,23 @@ export const getUserObservable = () => {
     } catch (error) {
         throw error;
     }
+}
+
+export const reAuthenticate = (password) => {
+    const user = firebaseAuth.currentUser;
+    const credential = EmailAuthProvider.credential(firebaseAuth.currentUser.email, password);
+    console.debug(credential);
+    return reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password)).then(
+        (user) => {
+            console.debug(user);
+            return user;
+        }
+    ).catch(
+        (error) => {
+            console.debug(error);
+            throw error;
+        }
+    );
 }
 
 export const signIn = (email, password) => signInWithEmailAndPassword(firebaseAuth, email, password)
@@ -44,13 +59,18 @@ export const logOut = () => signOut(firebaseAuth)
         return true;
     })
     .catch((error) => {
-        throw error.code;
+        throw error;
     })
 
-export const changePassword = (password) => updatePassword(user, password)
-    .then(() => {
-        return true;
-    })
-    .catch((error) => {
-        throw error.code;
-    })
+export const changePassword = (password) => {
+    const user = firebaseAuth.currentUser;
+    return updatePassword(user, password)
+        .then((r) => {
+            console.debug(r);
+            return r;
+        })
+        .catch((error) => {
+            console.debug(error);
+            throw error;
+        })
+}

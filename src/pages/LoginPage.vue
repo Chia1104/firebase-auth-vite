@@ -5,7 +5,6 @@ import {useStore} from "vuex";
 
 const store = useStore()
 const signInState = store.state.auth.signIn
-const message = signInState.errorMessage
 
 </script>
 
@@ -16,7 +15,7 @@ const message = signInState.errorMessage
     </div>
     <Message
         :warning="signInState.isError"
-        warningMsg="Invalid Email or password"
+        :warningMsg="signInState.errorMessage"
     />
   </div>
 </template>
