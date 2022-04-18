@@ -7,7 +7,7 @@ import { computed } from 'vue';
 
 const store = useStore()
 const isShow = computed(() => store.state.actionSheet.changePasswordSheet.isShow)
-const changePasswordState = computed(() => store.state.auth.changePassword)
+const changePasswordState = store.state.auth.changePassword
 
 </script>
 

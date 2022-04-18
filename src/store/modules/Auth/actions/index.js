@@ -56,12 +56,21 @@ export const changePasswordAction = async (context, {oldPassword, newPassword}) 
     if (newPassword === oldPassword) return context.commit("failChangePassword", "New password must be different from old password");
     context.commit("beginChangePassword");
     try {
-        const auth = reAuthenticate(oldPassword);
+        const auth = await reAuthenticate(oldPassword);
         if (auth) {
             const isChange = await changePassword(newPassword);
-            if (!isChange) return context.commit("failChangePassword", "Could not change password");
-            else return context.commit("successChangePassword");
-        } else context.commit("failChangePassword", 'Could not complete change password!!');
+            if (isChange === true) {
+                context.commit("successChangePassword");
+                console.debug('Password changed successfully');
+            }
+            else {
+                context.commit("failChangePassword", "Could not change password");
+                console.debug('Could not change password');
+            }
+        } else {
+            context.commit("failChangePassword", 'Could not complete change password!!');
+            console.debug('Could not complete change password!!');
+        }
     } catch (e) {
         return context.commit("failChangePassword", e);
     }

@@ -21,11 +21,8 @@ export const getUserObservable = () => {
     }
 }
 
-export const reAuthenticate = (password) => {
-    const user = firebaseAuth.currentUser;
-    const credential = EmailAuthProvider.credential(firebaseAuth.currentUser.email, password);
-    console.debug(credential);
-    return reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password)).then(
+export const reAuthenticate = (password) => reauthenticateWithCredential(firebaseAuth.currentUser, EmailAuthProvider.credential(firebaseAuth.currentUser.email, password))
+    .then(
         (user) => {
             console.debug(user);
             return user;
@@ -36,7 +33,6 @@ export const reAuthenticate = (password) => {
             throw error;
         }
     );
-}
 
 export const signIn = (email, password) => signInWithEmailAndPassword(firebaseAuth, email, password)
     .then((userCredential) => {
@@ -66,11 +62,10 @@ export const changePassword = (password) => {
     const user = firebaseAuth.currentUser;
     return updatePassword(user, password)
         .then(() => {
-            // console.debug(r);
             return true;
         })
         .catch((error) => {
-            // console.debug(error);
+            console.debug(error);
             throw error;
         })
 }
