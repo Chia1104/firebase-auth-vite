@@ -4,6 +4,8 @@ This project was created with [Vite](https://vitejs.dev/).
 
 This is a simple app using Firebase Auth to authenticate users, and using Vuex to manage state.
 
+You can see the full application at [vue-ts-firebase-example](https://github.com/Chia1104/vue-ts-firebase-example)
+
 ## Languages and Tools
 
 <div align="center">
