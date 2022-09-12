@@ -9,7 +9,7 @@
   "dependencies": {
     "firebase": "^9.6.10",
     "primeicons": "^5.0.0",
-    "primevue": "^3.16.2",
+    "primevue": "^3.17.0",
     "vue": "^3.2.38",
     "vue-router": "^4.0.14",
     "vuex": "^4.0.2"
