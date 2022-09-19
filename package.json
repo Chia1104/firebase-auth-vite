@@ -7,7 +7,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "firebase": "^9.6.10",
+    "firebase": "^9.10.0",
     "primeicons": "^5.0.0",
     "primevue": "^3.16.2",
     "vue": "^3.2.38",
