@@ -7,7 +7,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "firebase": "^9.6.10",
+    "firebase": "^9.10.0",
     "primeicons": "^5.0.0",
     "primevue": "^3.16.2",
     "vue": "^3.2.38",
@@ -16,8 +16,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^1.2.4",
-    "@vue/compiler-sfc": "^3.2.38",
-    "autoprefixer": "^10.4.8",
+    "@vue/compiler-sfc": "^3.2.39",
+    "autoprefixer": "^10.4.12",
     "postcss": "^8.4.12",
     "tailwindcss": "^3.0.24",
     "vite": "^2.4.0"
