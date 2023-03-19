@@ -1,3 +1,4 @@
 export const datastoreInitialState = {
-    races : []
+    races : [],
+    gps: {}
 };

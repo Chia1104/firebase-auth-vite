@@ -10,7 +10,7 @@ const footer=values.split('\n').filter(x=>x)
 </script>
 
 <template>
-  <div class="grid grid-cols-4 gap-4 mx-auto">
+  <div class="grid grid-cols-4 gap-4 mx-auto bg-indigo-900 text-white">
     <div v-for="x in footer">
         {{x.text}} {{x.link}}
     </div>

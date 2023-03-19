@@ -25,17 +25,17 @@ watchEffect(firebaseUser)
       <div class="flex items-center w-[80%]">
         <div>
           <h1 class="text-primary text-xl">
-            Firebase Auth Example
+            RUN-PIX
           </h1>
         </div>
       </div>
-      <div class="md:flex items-center w-[20%] sm:hidden justify-center">
+      <div class="sm:flex items-center w-[30%] sm:hidden justify-center">
         <div v-if="userState.isSignIn">
           <router-link to="/" class="text-primary mr-2 hover:text-[#FF9000] transition ease-in-out">
-            Home
+             <i class="pi pi-home" style="font-size: 1.5rem"></i>
           </router-link>
           <router-link to="/profile" class="text-primary mr-2 hover:text-[#FF9000] transition ease-in-out">
-            Profile
+            <i class="pi pi-user" style="font-size: 1.5rem"></i>
           </router-link>
         </div>
         <div v-else>

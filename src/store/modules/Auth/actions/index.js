@@ -25,7 +25,7 @@ export const signInGoogleAction = async (context ) => {
     context.commit("beginSignIn");
     try {
         const response = await signInGoogle();
-        console.debug(';'+JSON.stringify(response))
+        // console.debug(';'+JSON.stringify(response))
         if (response) return context.commit("successSignIn", response);
         else return context.commit("failSignIn", 'Could not complete login!!');
     } catch (error) {
