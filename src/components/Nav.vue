@@ -14,7 +14,6 @@ const firebaseUser = () => firebaseAuth.onAuthStateChanged(user => {
     store.commit('failRequestUser', 'Fail to get user')
   }
 });
-
 watchEffect(firebaseUser)
 
 </script>
@@ -24,9 +23,9 @@ watchEffect(firebaseUser)
     <div class="flex container w-[100%]">
       <div class="flex items-center w-[80%]">
         <div>
-          <h1 class="text-primary text-xl">
-            RUN-PIX
-          </h1>
+          <a class="text-primary text-xl" href="/">
+            {{site}}
+          </a>
         </div>
       </div>
       <div class="sm:flex items-center w-[30%] sm:hidden justify-center">

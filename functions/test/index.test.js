@@ -32,9 +32,9 @@ const wrapped = test.wrap(myFunctions.ScanImages);
 //   name:'test/20230115_090440.jpg',
 //   contentType: 'image/jpeg'};
 const data_JPEG = {bucket:config.storageBucket,
-            //  name:'uploads/mychoice23feb/2023-02-12T01:25:41.084Z^venue^avinashmane$gmail.com^20230212_065538.jpg',
+             name:'uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg',
             //  name:'uploads/mychoice23feb/2023-02-12T01:26:04.364Z^venue^avinashmane$gmail.com^20230212_065602.jpg',
-             name:'uploads/mychoice23feb/2023-02-12T01:28:29.364Z^venue^avinashmane$gmail.com^20230212_065828.jpg',
+            //  name:'uploads/mychoice23feb/2023-02-12T01:28:29.364Z^venue^avinashmane$gmail.com^20230212_065828.jpg',
              contentType: 'image/jpeg'};
             //  https://storage.googleapis.com/run-pix.appspot.com/uploads/mychoice23mar/2022-01-13T12%3A23%3A36.476Z%5Estart%5Eavinashmane%40gmail.com%5E9955-3Certificate.png             
 const data_PNG = {bucket:config.storageBucket,

@@ -3,7 +3,7 @@
     <div class="w-full text-center justify-center flex-col">
         <div>
           <Card>
-            <template #title > 
+            <template #title @dblclick="klick"> 
               Race id {{raceId}}             
             </template>
             <template #content>
@@ -58,12 +58,12 @@
             </TabView>
           </template>
 
-          <template #footer>
+          <!-- <template #footer>
             <router-link to="/races">
               <Button name="races" >Races</Button>
             </router-link>
             <Button name="create" @click="klick">Check</Button>
-          </template>
+          </template> -->
                     
         </Card>       
       

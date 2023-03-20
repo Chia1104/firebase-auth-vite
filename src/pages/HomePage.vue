@@ -19,22 +19,11 @@ let items= [
 					to: '/p'
 				},
 				{
-          label: 'Races',
+          label: 'Events',
           icon: 'pi pi-flag',
-          to: '/races'
+          to: '/e'
         },
-				// {
-				// 	label: 'Delete',
-				// 	icon: 'pi pi-times',
-				// 	command: () => {
-				// 		this.$toast.add({ severity: 'warn', summary: 'Delete', detail: 'Data Deleted', life: 3000});
-				// 	}
-				// },
-				// {
-				// 	label: 'Vue Website',
-				// 	icon: 'pi pi-external-link',
-				// 	url: 'https://vuejs.org/'
-				// }
+
 			]
 
 </script>
@@ -42,11 +31,11 @@ let items= [
 <template>
   <div class="container mx-auto">
     <div class="w-full text-center max-w-lg">
-      <h1>Home </h1>
-      <div v-if="userData.uid" >
+      <h1 class="text-xl">Home </h1>
+      <div v-if="userData.uid" class="mx-auto" >
         <table>
           <tr v-for="(v,k) in dispKeys">
-            <td>{{v}}</td>
+            <td><b>{{v}}</b></td>
             <td>{{userData[k]}}</td>
           </tr>
         </table>
@@ -54,9 +43,7 @@ let items= [
       <div v-else>
         Not logged in
       </div>
-      <Menu :model="items" />
-      <button class="px-4 py-1 text-sm text-indigo-600  focus:ring-offset-2"
-      @click="$router.push('races')">Races</button>
+      <Menu :model="items" class="mx-auto"/>
       
     </div>
   </div>

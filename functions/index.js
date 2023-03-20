@@ -1,5 +1,5 @@
 /** 
- * 
+ * Scan images
  * 
  * 
 */
@@ -37,6 +37,9 @@ const sharp = require('sharp')
 // Vision API
 const vision = require('@google-cloud/vision');
 
+
+const debug = process.env.DEBUG_MODE ? functions.logger.debug : ()=>{}
+  
 const log=functions.logger.log
 const error=functions.logger.error
 
@@ -64,7 +67,11 @@ let watermarks={}; //key="raceId" : watermark sharp image
  * B)  upload reading
  *    - bib matching annotations
  *    - update readings
+ * 
+ * '{"bucket":"run-pix.appspot.com","name":"uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg","contentType":"image/jpeg"}'
+ * "{\"bucket\":\"run-pix.appspot.com\",\"name\":\"uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg\",\"contentType\":\"image/jpeg\"}"
  */
+
 exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
 
   // Ignore images not in uploads
@@ -79,8 +86,9 @@ exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
     return null;
   }
 
-  var [folder, raceId, waypoint, userId, date, fileName] = parseObjName(object.name)
-  // log(object.name,raceId, waypoint, userId, date, fileName)
+  var [folder, raceId, waypoint, userId, date, gps, fileName] = parseObjName(object.name)
+  if (raceId=='default')
+    log(object,folder, raceId, waypoint, userId, date, gps, fileName)
 
 
   let testData = 'test/annotations_data.json';
@@ -157,7 +165,7 @@ exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
 async function compressImage(raceId,filePath, bucketName, metadata) {
 
   const fileName = filePath.split('/').pop();
-  const newFileName = fileName.replace(/\.png$/, ".jpg")//.replace(/[\:]/g, "_")
+  const newFileName = fileName.replace(/\.png$/, ".jpg")
   const newFilePath = `${PROCESSED_FOLDER}/${raceId}/${newFileName}`
   const thumbsPath = `${THUMBNAILS_FOLDER}/${raceId}/${newFileName}`
   let image, watermark;
@@ -186,7 +194,7 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
 
   try{
     // log(">>>>",fileName)
-    image = await downloadIntoMemory(bucket,filePath).catch(console.error);  
+    image = await downloadIntoMemory(bucket,filePath).catch(error);  
   } catch (e) {
     error("downloadIntoMemory",e)
   }
@@ -195,7 +203,7 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
   if (!watermarks[raceId]) {
     watermarks[raceId] = await downloadIntoMemory(bucket,WATERMARK_PATH(raceId),false)
                     .catch((e)=>{
-                      console.error(`not found for ${WATERMARK_PATH(raceId)}`)
+                      error(`not found for ${WATERMARK_PATH(raceId)}`)
                       watermarks[raceId]='not found'
                     });  
     // log('reading watermark')
@@ -206,7 +214,7 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
   await saveJPG(bucket, newFilePath, image, metadata, watermarks[raceId]);
 
   log(`Saving thumb ${thumbsPath}`)
-  saveThumb(bucket, thumbsPath, image);
+  saveThumb(bucket, thumbsPath, image, metadata);
 
   let attrs=Object.assign(metadata, {
     imagePath: newFilePath,
@@ -215,7 +223,7 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
   return attrs
 }
 
-async function saveJPG(bucket, newFilePath, image, metadata, watermarkImg) {
+async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
 
   if (watermarkImg && (watermarkImg!='not found')){
     // console.log(metadata)
@@ -223,25 +231,27 @@ async function saveJPG(bucket, newFilePath, image, metadata, watermarkImg) {
                                 .toBuffer()
       
     image=image
-      .composite([{ input: adjWm, gravity: 'southeast',
+      .composite([{ input: adjWm, gravity: 'south',
     }])
     // log('watermark done')
   } 
   // else {error('watermarkImg',watermarkImg && (watermarkImg!='not found'))}
 
-  const remoteWriteStream = bucket.file(newFilePath).createWriteStream(metadata);
+  const remoteWriteStream = bucket.file(filePath).createWriteStream(metadata);
   image
     .jpeg(JPG_OPTIONS)
     .pipe(remoteWriteStream)
     // .then(()=>log(`Writing watermarked image: ${newFilePath}`))
     // .catch((e)=>{error(`error in saveJPG() ${JSON.stringify(e)}`)});
+  return image
+  log(image)
 }
 
-function saveThumb(bucket, newFilePath, image,metadata) {
+function saveThumb(bucket, filePath, image,metadata) {
 
   // Create write stream for uploading thumbnail
   // const thumbnailUploadStream = bucket.file(thumbFilePath).createWriteStream({metadata});
-  const remoteWriteStream = bucket.file(newFilePath).createWriteStream({metadata});
+  const remoteWriteStream = bucket.file(filePath).createWriteStream({metadata});
 
   // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
   const transformer = sharp();
@@ -258,6 +268,7 @@ function saveThumb(bucket, newFilePath, image,metadata) {
     .toFormat('jpg')
     .pipe(remoteWriteStream);
 
+  
 }
 
 // Based on EXIF rotation metadata, get the right-side-up width and height:
@@ -297,7 +308,7 @@ function getNormalSize({
 
 async function updFSImageData(raceId, imagePath, detections, texts,exifdata) {
   let timestamp = new Date().toISOString()
-  functions.logger.debug(`writing to firestore ${imagePath}`)
+  debug(`writing to firestore ${imagePath}`)
   return await admin.firestore()
                 .collection('races').doc(raceId)
                 .collection('images').doc(imagePath)
@@ -352,6 +363,7 @@ function parseObjName(name){
       waypoint='general',
       userId='unknown', 
       date='nodate',
+      gps='',
       folder,
       fileName;
       
@@ -370,12 +382,12 @@ function parseObjName(name){
     else if (names.length==3) 
       [folder,raceId, fileName]=names
   } catch (e) {
-    console.debug('error',e)
+    error('error',e)
   }
 
   fileName=name.split('/').pop()
 
-  return [folder, raceId,waypoint,  userId, date, fileName]
+  return [folder, raceId,waypoint,  userId, date, gps, fileName]
 }
 
 function encodeKey(x){

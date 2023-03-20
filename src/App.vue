@@ -13,16 +13,17 @@ const callback = (response) => {
 <template>
   <Nav />
   <div class="mt-20">
-    <RouterView class="md:min-h-full" />
-    <!-- <Footer  /> -->
+    <RouterView  />
+    <Footer  />
   </div>
-  <!-- Login
+  <!-- Login  
+  class="md:min-h-full" for Router view
   <GoogleLogin :callback="callback"/> -->
 </template>
 
 <style scoped>
 RouterView {
-  min-height: calc(85vh - 70px);
+  /* min-height: calc(85vh - 70px); */
 }
 
 footer {

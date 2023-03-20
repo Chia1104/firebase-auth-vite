@@ -20,20 +20,9 @@ import {
 const routes = [
     // dynamic segments start with a colon
     {
-        path: "/races",
-        name: 'Races',
-        component: Races
-    },
-    // {
-    //     path: "/p",
-    //     name: 'tRaces',
-    //     component: ResultsPage
-    // },
-
-    {
-        path: '/race/:raceId',
-        name: "Race",
-        component: Race,
+        path: "/e",
+        name: 'Events',
+        component: Races,
         beforeEnter: (to, from, next) => {
             firebaseAuth.onAuthStateChanged(user => {
                 if (user) {
@@ -42,11 +31,16 @@ const routes = [
                     next('/login');
                 }
             });
-        }
+        },
+        children: [  {
+            path: '/e/:raceId',
+            name: "Event",
+            component: Race,
+        },]
     },
     {
         path: '/r',
-        name: "Photos",
+        name: "Results",
         component: ResultsPage,
         children: [{
               path: ':raceId',

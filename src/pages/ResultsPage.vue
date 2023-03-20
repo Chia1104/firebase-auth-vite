@@ -24,12 +24,20 @@ let klick=() => {
 
 <template>
   <div class="container mx-auto">
-    <h1>Results</h1>
+
+    <h1 @dblclick="klick()" class="text-lg">Results</h1>
     <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
-                      placeholder="Select a race" class="md:w-14rem" />   
-    {{bib}}                  
-    <div class="w-full text-center justify-center flex-col">
-      <Button name="create" @click="klick">Create</Button>
+                      placeholder="Select a race" class="md:w-14rem w-full" />   
+    <div class="card flex justify-content-center w-full">
+      <AutoComplete v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib" 
+        :dropdown-click="searchBib" class="w-full" />
+        <!-- <AutoComplete v-model="selectedItem" :suggestions="filteredItems" @complete="searchItems" :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="label" dropdown /> -->
+      <Button name="searchImages" @click="searchImages">Enter</Button>
+    </div>                     
+    <div v-if="bibSelection && raceId" class="text-lg">
+      BIB: {{bibSelection}} {{bibData.Name}}
     </div>
+
+
   </div>
 </template>

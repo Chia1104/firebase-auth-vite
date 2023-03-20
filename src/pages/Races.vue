@@ -1,8 +1,6 @@
 <script setup>
 import { useStore } from 'vuex';
-import TestComponent from "../components/TestComponent.vue";
 import DataTable from 'primevue/datatable';
-import Button from 'primevue/button';
 import Column from 'primevue/column';
 
 import { computed } from 'vue';
@@ -53,7 +51,7 @@ NOP(fsdb);
           <Column field="connect" header="Connect" >
             <template #body="slotProps">
               <Button type="button" :label="slotProps.data.id" 
-                @click="$router.push(`race/${slotProps.data.id}`)"
+                @click="$router.push(`e/${slotProps.data.id}`)"
                 class="p-button-raised p-button-secondary"></Button>
             </template>
           </Column>
@@ -74,9 +72,7 @@ NOP(fsdb);
         </tr>
 
       </div> -->
-        <!-- <HelloWorld/> -->
-      <Button name="create" @click="klick">Create</Button>
-      <TestComponent msg="Hello Vue and Vite"/>
+      
     </div>
   </div>
 </template>
