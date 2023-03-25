@@ -8,10 +8,12 @@
     "ftest": "cd functions & node node_modules/mocha/bin/mocha.js --reporter spec"
   },
   "dependencies": {
+    "add": "^2.0.6",
     "firebase": "^9.12.1",
     "primeicons": "^6.0.1",
     "primevue": "^3.18.0",
     "vue": "^3.2.41",
+    "vue-gtag-next": "^1.14.0",
     "vue-router": "^4.1.5",
     "vue3-google-login": "^2.0.14",
     "vuex": "^4.1.0"

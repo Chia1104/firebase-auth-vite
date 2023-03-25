@@ -4,6 +4,11 @@
       "ignore": [],
       "rewrites": [
         {
+          "source": "/image/**",
+          "function": "api",
+          "optional": {"region": "us-central1" }
+        }, 
+        {
           "source": "**",
           "destination": "/index.html"
         }

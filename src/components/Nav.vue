@@ -15,7 +15,14 @@ const firebaseUser = () => firebaseAuth.onAuthStateChanged(user => {
   }
 });
 watchEffect(firebaseUser)
-
+let site= computed(()=>{
+  if (document.location.href.toLowerCase().search("fitness.forthe.life")!=-1) 
+    return "Fitness.ForThe.life"
+  if (document.location.href.toLowerCase().search("memories.forthe.life")!=-1) 
+    return "Memories.ForThe.life"
+  // default
+  return 'RUN PiX'
+  })
 </script>
 
 <template>

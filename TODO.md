@@ -8,12 +8,17 @@
 
 ### current 
 
-### bugs
-* /r route not working
+### features
+* search by bib no
+* direct link to bib
+* dynamig page with OG tags
+* upload time bookmark
 
-### features/roadmap
+### bugs
+
+### roadmap
 * IMG: watermark
-* IMD: dynamic resize (backend)
+* IMG: dynamic resize (backend)
 * SC: FB share
 * SS: INSTA share
 * separate upload bucket

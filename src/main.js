@@ -10,11 +10,17 @@ import Tooltip from 'primevue/tooltip';
 import 'primevue/resources/themes/saga-blue/theme.css';
 import 'primevue/resources/primevue.min.css';
 import 'primeicons/primeicons.css';
+import VueGtag from "vue-gtag-next";
 // import vue3GoogleLogin from 'vue3-google-login'
 
 const app = createApp(App)
 
 app.use(store)
+    .use(VueGtag, {
+        property: {
+        id: "G-BV8G5NRLDP"
+        }
+    })
     .use(router)
     // PrimeVUE
     .use(PrimeVue)

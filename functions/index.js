@@ -1,6 +1,6 @@
 /** 
- * Scan images
- * 
+ * HTTP triggers: image generator
+ * Storage triggered: Scan images
  * 
 */
 'use strict';
@@ -12,6 +12,7 @@ const PROCESSED_FOLDER = 'processed';
 const THUMBNAILS_FOLDER = 'thumbs';
 const THUMB_MAX_WIDTH = 200;
 const THUMB_MAX_HEIGHT = 150;
+const GS_URL_PREFIX="https://storage.googleapis.com/run-pix.appspot.com/"
 const JPEG_EXTENSION = '.jpg';
 const WATERMARK_PATH = (x) =>  `ref/watermark/${x}.png`
 const bibRegex = /^[A-Z]{0,1}[0-9]{3,5}$/;
@@ -53,6 +54,88 @@ firestore.settings({ ignoreUndefinedProperties: true })
 
 let watermarks={}; //key="raceId" : watermark sharp image
 
+
+//  const functions = require('firebase-functions');
+//  const admin = require('firebase-admin');
+//  admin.initializeApp();
+ 
+ const express = require('express');
+ const exphbs = require('express-handlebars');
+ const app = express();
+//  const firebaseUser = require('./firebaseUser');
+ 
+ app.engine('handlebars', exphbs.engine({defaultLayout: 'main'}));
+ app.set('view engine', 'handlebars');
+ //  app.use(firebaseUser.validateFirebaseIdToken);
+
+ /**
+ * Get dynamic page showing the image
+ * Need page url, photo url, thumb url, link event/bib search,
+ */ 
+  app.get('/image/:imagePath', (req, res) => {
+    // @ts-ignore
+    //test link http://localhost:5000/image/d2VydW4yMDIzLzUwMzEvMjAyMy0wMy0xM1QxNjozODowMy41Njg5NzN+Z2VuZXJhbH52YWliaGF2flNfRzAzMDAzLmpwZw==
+    let p = mapParams(req.params)
+    return renderImage(res, req, p, );
+    
+   });
+   
+ 
+ app.get('/image/:raceId/:bibNo/:imagePath', (req, res) => {
+  // @ts-ignore
+  //test link http://localhost:5000/image/werun2023/5031/2023-03-13T16:38:03.568973~general~vaibhav~S_G03003.jpg
+  let p = mapParams(req.params)
+  return renderImage(res, req, p, );
+
+  
+ });
+ 
+ app.get('*', function(req, res){
+  res.send(`Error finding the resource for the URL ${req.url}
+  <br/>
+  Data: ${JSON.stringify(req.params)}` , 404);
+});
+
+function renderImage(res, req, p, ) {
+  return res.render('image', {
+    imageUrl: p.imageUrl,
+    previewUrl: p.imageUrl,
+    bibNo: p.bibNo,
+    raceId: p.raceId,
+    pageUrl: p.pageUrl,
+    params: JSON.stringify(req.params),
+  });
+}
+
+// import { Buffer } from 'buffer';
+function mapParams(params){
+  // log(params)
+  let raceId,bibNo,imagePath;
+  if (!params.raceId) {
+    let buff = new Buffer.from(params.imagePath, 'base64');
+    [raceId,bibNo,imagePath] = buff.toString('ascii').split('/');
+
+  } else {
+    raceId= params.raceId
+    bibNo=params.bibNo
+    imagePath=params.imagePath
+  }
+  // sample image "https://storage.googleapis.com/run-pix.appspot.com/processed/werun2023/2023-03-13T16:38:03.568973~general~vaibhav~S_G03003.jpg"
+  const imageUrl = imagePath.endsWith(JPEG_EXTENSION) ? 
+                    `${GS_URL_PREFIX}processed/${raceId}/${imagePath}` :
+                    `${GS_URL_PREFIX}processed/${raceId}/${imagePath}${JPEG_EXTENSION}` ;
+  //  log('Signed-in user:', user);
+  const url = `https://run-pix.web.app/p/${raceId}/${bibNo}`
+  return {imageUrl:imageUrl,
+          bibNo:bibNo,
+          raceId: raceId,
+          pageUrl:url}
+}
+ // This HTTPS endpoint can only be accessed by your Firebase Users.
+ // Requests need to be authorized by providing an `Authorization` HTTP header
+ // with value `Bearer <Firebase ID Token>`.
+ exports.api = functions.https.onRequest(app);
+//  exports.image = functions.https.onRequest(app);
 /**
  * When an image is uploaded a) check texts Cloud Vision, JPG conv and update in firestores
  * input   {bucket:'',name:'uploads/event/personId/image'}
