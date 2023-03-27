@@ -1,26 +1,14 @@
 /** 
- * HTTP triggers: image generator
- * Storage triggered: Scan images
+ * Structure 
+ * 1 includes
+ * 2 configation
+ * 3 HTTP triggers: image generator
+ * 4 Storage triggered: Scan images
  * 
 */
 'use strict';
-
-// Where we'll config
-const UPLOADS_FOLDER = 'uploads';
-const PROCESSED_FOLDER = 'processed';
-// File extension for the created JPEG files.
-const THUMBNAILS_FOLDER = 'thumbs';
-const THUMB_MAX_WIDTH = 200;
-const THUMB_MAX_HEIGHT = 150;
-const GS_URL_PREFIX="https://storage.googleapis.com/run-pix.appspot.com/"
-const JPEG_EXTENSION = '.jpg';
-const WATERMARK_PATH = (x) =>  `ref/watermark/${x}.png`
-const bibRegex = /^[A-Z]{0,1}[0-9]{3,5}$/;
-
-const NOTIMING_WAYPOINTS = process.env.NOTIMING_WAYPOINTS ?
-        JSON.parse(process.env.NOTIMING_WAYPOINTS) : ['venue','general']
-const JPG_OPTIONS = process.env.JPG_OPTIONS ? JSON.parse(process.env.JPG_OPTIONS) :
-            {quality: 85, progressive: true}
+/* ~~~~~~~~~~~~ 1. includes ~~~~~~~~~~~~~ */
+const sharp = require('sharp')
 // Firebase setup
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
@@ -34,13 +22,50 @@ const exifr = require('exifr');
 // const exec = promisify(require('child_process').exec);
 const path = require('path');
 const os = require('os');
-const sharp = require('sharp')
 // Vision API
 const vision = require('@google-cloud/vision');
 
+/* ~~~~~~~~~~~~ 2. config ~~~~~~~~~~~~~ */
+const TEST_MODE=false
+const testData = 'test/annotations_data.json';
+  // Where we'll config
+const UPLOADS_FOLDER = 'uploads';
+const PROCESSED_FOLDER = 'processed';
+// File extension for the created JPEG files.
+const THUMBNAILS_FOLDER = 'thumbs';
+const NOTFOUND = 'notfound'
+
+const GS_URL_PREFIX="https://storage.googleapis.com/run-pix.appspot.com/"
+const JPEG_EXTENSION = '.jpg';
+const WATERMARK_PATH = (x) =>  `ref/watermark/${x}.png`
+const bibRegex = /^[A-Z]{0,1}[0-9]{3,5}$/;
+
+const RESIZE_OPTION = process.env.RESIZE_OPTION ? 
+                JSON.parse(process.env.RESIZE_OPTION) : 
+                {
+                  width: 3072,
+                  height: 3072,
+                  fit: sharp.fit.inside,
+                  position: sharp.strategy.entropy
+                }
+const THUMBSIZE_OPTION = process.env.THUMBSIZE_OPTION ? 
+                JSON.parse(process.env.THUMBSIZE_OPTION) : 
+                {
+                  width: 400,
+                  height: 300,
+                  fit: sharp.fit.inside,
+                  position: sharp.strategy.entropy
+                }
+const JPG_OPTIONS = process.env.JPG_OPTIONS ? JSON.parse(process.env.JPG_OPTIONS) :
+            {quality: 85, progressive: true}
+const THUMB_JPG_OPTIONS = process.env.JPG_OPTIONS ? JSON.parse(process.env.JPG_OPTIONS) :
+            {quality: 50}
+const NOTIMING_WAYPOINTS = process.env.NOTIMING_WAYPOINTS ?
+            JSON.parse(process.env.NOTIMING_WAYPOINTS) : ['venue','general']
+    
+
 
 const debug = process.env.DEBUG_MODE ? functions.logger.debug : ()=>{}
-  
 const log=functions.logger.log
 const error=functions.logger.error
 
@@ -55,9 +80,7 @@ firestore.settings({ ignoreUndefinedProperties: true })
 let watermarks={}; //key="raceId" : watermark sharp image
 
 
-//  const functions = require('firebase-functions');
-//  const admin = require('firebase-admin');
-//  admin.initializeApp();
+/* ~~~~~~~~~~~~ 3. HTTPS functions  ~~~~~~~~~~~~~ */
  
  const express = require('express');
  const exphbs = require('express-handlebars');
@@ -86,7 +109,6 @@ let watermarks={}; //key="raceId" : watermark sharp image
   //test link http://localhost:5000/image/werun2023/5031/2023-03-13T16:38:03.568973~general~vaibhav~S_G03003.jpg
   let p = mapParams(req.params)
   return renderImage(res, req, p, );
-
   
  });
  
@@ -131,11 +153,13 @@ function mapParams(params){
           raceId: raceId,
           pageUrl:url}
 }
- // This HTTPS endpoint can only be accessed by your Firebase Users.
- // Requests need to be authorized by providing an `Authorization` HTTP header
- // with value `Bearer <Firebase ID Token>`.
+ // This HTTPS endpoint can  be made accessed by `Authorization` HTTP header
+ // with value `Bearer <Firebase ID Token>`.  Not used
  exports.api = functions.https.onRequest(app);
-//  exports.image = functions.https.onRequest(app);
+
+/* ~~~~~~~~~~~~ 4. Storage functions  ~~~~~~~~~~~~~ */
+
+
 /**
  * When an image is uploaded a) check texts Cloud Vision, JPG conv and update in firestores
  * input   {bucket:'',name:'uploads/event/personId/image'}
@@ -174,12 +198,11 @@ exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
     log(object,folder, raceId, waypoint, userId, date, gps, fileName)
 
 
-  let testData = 'test/annotations_data.json';
   let data;
   // Check the image content using the Cloud Vision API.
   try {
-    if (false) { //TEST mode?  if you can read from firestore
-      data = JSON.parse(fs.readFileSync(testData, 'utf8'));
+    if (TEST_MODE) { //TEST mode?  if you can read from firestore
+      data = [{"textAnnotations":[]}]//JSON.parse(fs.readFileSync(testData, 'utf8')) ;
     } else {
       const visionClient = new vision.ImageAnnotatorClient();
       data = await visionClient.textDetection(
@@ -194,7 +217,7 @@ exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
   } catch (e) {
     log(`error running computer vision ${testData} ${JSON.stringify(e)}`)
   }
-
+  
   const detections = data[0].textAnnotations;
   
   // save images/ref data
@@ -205,8 +228,7 @@ exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
     var attrs = await compressImage(raceId,object.name, object.bucket, {});
     
     // log("open waypointation codes")
-    // var pluscode=encode({  latitude: attrs.latitude, 
-    //                       longitude: attrs.longitude})
+    // var pluscode=encode({  latitude: attrs.latitude,longitude: attrs.longitude})
     log(`Readings results on image "${object.name}"`, detections.length);
     let texts=[];    
     for (let i = 0; i < detections.length; i++) {
@@ -257,37 +279,24 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
 
   const bucket = admin.storage().bucket(bucketName);
   
-  async function downloadIntoMemory(bucket,filePath,metadataReqd=true) {
-    // Downloads the file into a buffer in memory.
-    const contents =   await bucket.file(filePath).download();
-    let img
-    try{
-        img = sharp(contents[0])// contents
-    } catch {
-      error(`can't make sharp object for ${filePath}`)
-    }
-    // only for main image not required other wise
-    if (metadataReqd){
-      metadata = Object.assign( metadata,
-                              await exifr.parse(contents[0],true))
-    }
-    // metadata.latlng=await exifr.gps(contents[0])
-    return img
-  }
 
   try{
-    // log(">>>>",fileName)
-    image = await downloadIntoMemory(bucket,filePath).catch(error);  
+    let imgMetadata;
+    [image, imgMetadata] = await getImageMetadata(bucket,filePath).catch(error);  
+    metadata = Object.assign( metadata, imgMetadata)
+    
   } catch (e) {
-    error("downloadIntoMemory",e)
+    error("getImageMetadata",e)
   }
 
   // check if watermark exists for the race
   if (!watermarks[raceId]) {
-    watermarks[raceId] = await downloadIntoMemory(bucket,WATERMARK_PATH(raceId),false)
+    // return as a array
+    [watermarks[raceId]] = await getImageMetadata(bucket,WATERMARK_PATH(raceId),false)
                     .catch((e)=>{
-                      error(`not found for ${WATERMARK_PATH(raceId)}`)
-                      watermarks[raceId]='not found'
+                      functions.logger.warn(`Watermark not found ${WATERMARK_PATH(raceId)}`)
+                      watermarks[raceId]=NOTFOUND
+                      return [NOTFOUND]
                     });  
     // log('reading watermark')
     
@@ -295,6 +304,7 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
 
   log(`Saving JPG ${newFilePath}`)
   await saveJPG(bucket, newFilePath, image, metadata, watermarks[raceId]);
+  // log(">>>>",JSON.stringify(await image.metadata()).substring(0,200))
 
   log(`Saving thumb ${thumbsPath}`)
   saveThumb(bucket, thumbsPath, image, metadata);
@@ -306,28 +316,64 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
   return attrs
 }
 
+async function getImageMetadata(bucket,filePath,metadataReqd=true) {
+  // Downloads the file into a buffer in memory.
+  const contents =   await bucket.file(filePath).download();
+  let img
+  try{
+      img = sharp(contents[0])// contents
+  } catch {
+    error(`can't make sharp object for ${filePath}`)
+  }
+  if (metadataReqd){
+    var imgMetadata =  await exifr.parse(contents[0],true)
+  }
+  return [img, imgMetadata]
+}
+
+/**
+ * Saves image in storage after a) resize b) watermark
+ * @param {*} bucket 
+ * @param {*} filePath 
+ * @param {*} image 
+ * @param {*} metadata 
+ * @param {*} watermarkImg 
+ * @returns 
+ */
 async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
 
-  if (watermarkImg && (watermarkImg!='not found')){
-    // console.log(metadata)
-    let adjWm=await watermarkImg.resize({ width: metadata.ImageWidth})
+  // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
+  const transformer = sharp(); 
+  transformer.resize(  RESIZE_OPTION )
+              .jpeg(JPG_OPTIONS)
+
+  // log(">>>3",JSON.stringify(await image.metadata()).substring(0,200))  
+  // log(await watermarkImg.metadata())
+    
+  if (watermarkImg && (watermarkImg!=NOTFOUND)){
+    let _width = Object.keys(metadata).filter(x=>x.includes('idth')).map(x=>metadata[x])[0]
+    // let metadata_jpg=await image.metadata()
+    // log(">>>4", RESIZE_OPTION.width,_width)
+    
+    let adjWm=await watermarkImg.resize({ width: RESIZE_OPTION.width})
                                 .toBuffer()
+    console.log(await exifr.parse(adjWm))
       
-    image=image
+    transformer
       .composite([{ input: adjWm, gravity: 'south',
     }])
     // log('watermark done')
   } 
-  // else {error('watermarkImg',watermarkImg && (watermarkImg!='not found'))}
+  // else {error('watermarkImg',watermarkImg && (watermarkImg!=NOTFOUND))}
 
   const remoteWriteStream = bucket.file(filePath).createWriteStream(metadata);
-  image
-    .jpeg(JPG_OPTIONS)
-    .pipe(remoteWriteStream)
+  await image
+      .pipe(transformer)
+      // .jpeg(JPG_OPTIONS)
+      .pipe(remoteWriteStream)
     // .then(()=>log(`Writing watermarked image: ${newFilePath}`))
     // .catch((e)=>{error(`error in saveJPG() ${JSON.stringify(e)}`)});
   return image
-  log(image)
 }
 
 function saveThumb(bucket, filePath, image,metadata) {
@@ -338,13 +384,9 @@ function saveThumb(bucket, filePath, image,metadata) {
 
   // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
   const transformer = sharp();
-  // pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(thumbnailUploadStream);
-  transformer.resize(  {
-    width: THUMB_MAX_WIDTH,
-    height: THUMB_MAX_HEIGHT,
-    fit: sharp.fit.inside,
-    position: sharp.strategy.entropy
-  }).jpeg(JPG_OPTIONS)
+  
+  transformer.resize(  THUMBSIZE_OPTION)
+             .jpeg(THUMB_JPG_OPTIONS)
 
   image
     .pipe(transformer)

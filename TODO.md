@@ -7,6 +7,11 @@
 # Todo:
 
 ### current 
+* IMG: dynamic resize (backend)
+* Default watermark (blank)
+* two rows fixed/centerd
+* SC: FB share
+* Whatsapp share
 
 ### features
 * search by bib no
@@ -18,8 +23,6 @@
 
 ### roadmap
 * IMG: watermark
-* IMG: dynamic resize (backend)
-* SC: FB share
 * SS: INSTA share
 * separate upload bucket
 * UI: edit race info

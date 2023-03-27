@@ -13,8 +13,8 @@
     <div v-if="bibSelection && raceId" class="text-lg">
       BIB: {{bibSelection}} {{bibData.Name}}
     </div>
-    <div  class="flex flex-wrap bg-gray-200">
-      <ImageCard v-for="img in images" v-bind:raceId="raceId" v-bind:imagePath="img.imagePath"/>
+    <div  class="flex flex-wrap bg-gray-200 justify-evenly">
+      <ImageCard v-for="img in images" v-bind:raceId="raceId" v-bind:bibNo="bibSelection" v-bind:imagePath="img.imagePath"/>
       <!-- <div class="flex-auto bg-teal-400 p-4 m-2">1</div>   -->
     </div>
     <div class="w-full text-center justify-center flex-col">

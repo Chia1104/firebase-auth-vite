@@ -11,6 +11,7 @@ import 'primevue/resources/themes/saga-blue/theme.css';
 import 'primevue/resources/primevue.min.css';
 import 'primeicons/primeicons.css';
 import VueGtag from "vue-gtag-next";
+import VueSocialSharing from 'vue-social-sharing'
 // import vue3GoogleLogin from 'vue3-google-login'
 
 const app = createApp(App)
@@ -21,6 +22,7 @@ app.use(store)
         id: "G-BV8G5NRLDP"
         }
     })
+    .use(VueSocialSharing)
     .use(router)
     // PrimeVUE
     .use(PrimeVue)

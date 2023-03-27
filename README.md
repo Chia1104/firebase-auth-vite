@@ -35,7 +35,8 @@ You can see the full application at [vue-ts-firebase-example](https://github.com
 * runpix\> npm run build
 * firebase deploy
 * cd functions
-* gcloud functions deploy ScanImages --memory=1024MB
+* C:\m\runpix>set CLOUDSDK_PYTHON=c:\sw\py310nb_env\python.exe
+* C:\m\runpix>gcloud functions deploy ScanImages --memory 1024mb
 ### Vercel
 You can go here, [deployment](https://firebase-auth-vite.vercel.app/).
 
@@ -71,7 +72,8 @@ Array.from(document.querySelectorAll('*')).find(e => e.__vue_app__).__vue_app__.
 
 ### References
 
-
+* firebase function
+https://firebase.google.com/docs/functions/callable
 
 * templates for dynamic HTML: https://github.com/firebase/functions-samples/tree/main/template-handlebars
 * also https://github.com/sonakshs/cra-ssr-firebase

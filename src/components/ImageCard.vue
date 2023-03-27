@@ -11,39 +11,16 @@ import { ref as storageRef, getDownloadURL } from "firebase/storage";
 let props = defineProps({
   raceId: String,
   imagePath: String,
+  bibNo: String,
 })
 let imagePath=props.imagePath
-// console.log(props)
 
 const visible = ref(false);
 const getPublicUrl = (folder,raceId,file) => `https://storage.googleapis.com/run-pix.appspot.com/${folder}/${raceId}/${file}`
+const shareableUrl = computed(() => `https://run-pix.web.app/image/${props.raceId}/${props.bibNo}/${imagePath}`)
 
 let thumbUrl=ref(getPublicUrl('thumbs',props.raceId,imagePath))
 let photoUrl=ref(getPublicUrl('processed',props.raceId,imagePath))
-// getUrl(imagePath,true)
-
-// let PhotoUrl=computed(()=>getUrl(false))
-// let raceDoc=doc(db, "races", props.raceId); //
-
-// function getUrl(filePath,thumb=true){
-//   filePath=props.imagePath.replace('.png',".jpg")
-//   // console.log("getUrl",thumb)
-//   if (thumb) 
-//     filePath = `thumbs/${props.raceId}/${filePath}`
-//   else
-//     filePath = `processed/${props.raceId}/${filePath}`
-//   let r=storageRef(storage,filePath)
-//   // console.debug("ImageCard",filePath,r)
-//   getDownloadURL(r)
-//   .then((url)=>{
-//     console.log(filePath,url)
-//     if (thumb) // no braces
-//       thumbUrl.value=url
-//     else
-//       photoUrl.value=url
-//     })
-//   .catch((e)=>{console.error(`error in getDownloadURL`,e)})
-// }
 </script>
     
 <template >
@@ -55,15 +32,38 @@ let photoUrl=ref(getPublicUrl('processed',props.raceId,imagePath))
 
       <!-- <Button label="Show" icon="pi pi-external-link" @click="visible = true;getUrl(imagePath,false)" /> -->
 
-      <Dialog v-model:visible="visible" maximizable modal header="Header" :style1="{ width: '50vw' }">
-       <Image v-tooltip="'Click to download'" :src="photoUrl" v-bind:aria-label="photoUrl" /> 
-       
+      <Dialog v-model:visible="visible" maximizable modal v-bind:header="raceId" :style1="{ width: '50vw' }">
+        <Image v-tooltip="'Click to download'" :src="photoUrl" v-bind:aria-label="photoUrl" /> 
+        <div>
+          
+          <ShareNetwork
+            network="facebook"
+            :url="shareableUrl"
+            title="Celebrating fitness"
+            description="I’d like to share just one of many pictures . Take a moment search pics for your family and friend, to appreciate their fitness commitment."
+            quote="Never give up!"
+            hashtags="#pcmcrunners"
+          >
+            <Button>Share on facebook &nbsp;<i class="pi pi-facebook" style="font-size: 1rem"></i></Button>
+          </ShareNetwork>
+          
+          
+          <ShareNetwork
+            network="WhatsApp"
+            :url="shareableUrl"
+            title="Celebrating fitness"
+            description="I’d like to share a picture. Please take a moment search pics for your family and friend.  #NeverGiveUp #RunPiX"
+          >
+            <Button>Share on &nbsp;<i class="pi pi-whatsapp" style="font-size: 1rem"></i></Button>
+          </ShareNetwork>
+          
+        </div>
       </Dialog>       
 
 </template>
 
 <style scoped>
 .thumb {
-  max-width: 25vh;
+  max-width: 19vh;
 }
 </style>

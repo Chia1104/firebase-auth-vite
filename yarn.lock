@@ -1683,6 +1683,11 @@ vue-router@^4.1.5:
   dependencies:
     "@vue/devtools-api" "^6.1.4"
 
+vue-social-sharing@^4.0.0-alpha4:
+  version "4.0.0-alpha4"
+  resolved "https://registry.npmjs.org/vue-social-sharing/-/vue-social-sharing-4.0.0-alpha4.tgz"
+  integrity sha512-hMbgpZkY5aRAiznSB/sgzdMVgdSbkmIHEaELX7pUbuUd6KS1Z/GAi7a/q0Qn+GFn0+6qMMvwyp3ZOE0+WYPQ1w==
+
 vue@^3.0.0, vue@^3.0.0-rc.11, vue@^3.0.3, vue@^3.2.0, vue@^3.2.25, vue@^3.2.41, vue@3.2.41:
   version "3.2.41"
   resolved "https://registry.npmjs.org/vue/-/vue-3.2.41.tgz"

@@ -32,7 +32,9 @@ const wrapped = test.wrap(myFunctions.ScanImages);
 //   name:'test/20230115_090440.jpg',
 //   contentType: 'image/jpeg'};
 const data_JPEG = {bucket:config.storageBucket,
-             name:'uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg',
+            name:'uploads/mychoice23mar/2023-03-15T10:32:48.483381~general~bcoconut~DSC_0466.jpg',
+            // name:'uploads/werun2023/2023-03-13T14:28:45.900378~general~vaibhav~S_G01851.jpg', 
+            // name:'uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg',
             //  name:'uploads/mychoice23feb/2023-02-12T01:26:04.364Z^venue^avinashmane$gmail.com^20230212_065602.jpg',
             //  name:'uploads/mychoice23feb/2023-02-12T01:28:29.364Z^venue^avinashmane$gmail.com^20230212_065828.jpg',
              contentType: 'image/jpeg'};
