@@ -4,7 +4,6 @@ import {ref, reactive } from "vue";
 import {GoogleAuthProvider,signInWithPopup } from 'firebase/auth'
 import {firebaseAuth } from '../../firebase/config'
 import InputText from 'primevue/inputtext';
-import Button from 'primevue/button';
 import LoadingSpinner from './LoadingSpinner.vue';
 import router from "../router";
 
@@ -74,8 +73,9 @@ const validateForm = () => {
 </script>
 
 <template>
+  <LoadingSpinner v-if="signInState.isLoading" />
+    
   <!-- <form class="flex-col text-center bg-white md:w-[75%] rounded-xl shadow-lg mx-auto sm:w-full p-5 relative" @submit.prevent="signIn" @change="validateForm">
-    <LoadingSpinner v-if="signInState.isLoading" />
     <h1 class="text-left text-2xl mb-10 ml-3">Login</h1>
     <div class="md:w-[65%] mx-auto my-10 sm:w-full">
       <span class="p-float-label mb-2">
@@ -95,12 +95,14 @@ const validateForm = () => {
       Login</button>
     <br/>
   </form>  -->
-  <button class="bg-[#2B2E4A] rounded-full drop-shadow-lg text-white text-md h-9 w-[185px] opacity-40 ableSignIn" @click="signInGoogle">
+  <div class="w-full">
+    <button class="bg-blue-300 rounded-full drop-shadow-lg text-white text-md h-9 w-full opacity-40 ableSignIn" @click="signInGoogle">
       Login with Google</button>
+  </div>
 </template>
 
 <style scoped lang="postcss">
 .ableSignIn {
-  @apply hover:bg-[#FF9000] transition ease-in-out opacity-100
+  @apply hover:bg-indigo-300 transition ease-in-out opacity-100
 }
 </style>

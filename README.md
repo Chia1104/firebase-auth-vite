@@ -1,13 +1,15 @@
-# Firebase Auth for Vite
+# Run-Pix (AI driven race management)
 
 run-pix.web.app
 
 This project was created with [Vite](https://vitejs.dev/).
 
-This is a simple app using Firebase Auth to authenticate users, and using Vuex to manage state.
+* [Features and roadmap](TODO.md)
+* [DESIGN](README_DESIGN.md)
+* [WIKI](https://github.com/avinashmane/runpix/wiki)
+* [Feature requests](https://github.com/avinashmane/runpix/discussions)
 
-You can see the full application at [vue-ts-firebase-example](https://github.com/Chia1104/vue-ts-firebase-example)
-
+# Development details
 ## Languages and Tools
 
 <div align="center">
@@ -77,3 +79,5 @@ https://firebase.google.com/docs/functions/callable
 
 * templates for dynamic HTML: https://github.com/firebase/functions-samples/tree/main/template-handlebars
 * also https://github.com/sonakshs/cra-ssr-firebase
+
+* You can see the full application at [vue-ts-firebase-example](https://github.com/Chia1104/vue-ts-firebase-example)

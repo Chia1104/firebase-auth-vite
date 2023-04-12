@@ -3,8 +3,8 @@
  * 1 includes
  * 2 configation
  * 3 HTTP triggers: image generator
- * 4 Storage triggered: Scan images
- * 
+ * 4 Firestore triggered
+ * 5. Storage triggered: Scan images
 */
 'use strict';
 /* ~~~~~~~~~~~~ 1. includes ~~~~~~~~~~~~~ */
@@ -20,13 +20,33 @@ const exifr = require('exifr');
 // const mkdirp = require('mkdirp') //fs.promises.mkdir;
 // const {  promisify} = require('util');
 // const exec = promisify(require('child_process').exec);
-const path = require('path');
-const os = require('os');
+// const path = require('path');
+// const os = require('os');
 // Vision API
 const vision = require('@google-cloud/vision');
 
 /* ~~~~~~~~~~~~ 2. config ~~~~~~~~~~~~~ */
-const TEST_MODE=false
+// options for triggers
+const defaultFor= (OPTION,default_)=>{
+  let cfg 
+  try {
+  if (process.env[OPTION]) 
+    cfg= JSON.parse(process.env[OPTION]) 
+  else
+    cfg= default_
+  } catch (e) {console.debug(e)}
+  // console.debug(">>>",OPTION,process.env[OPTION],cfg)
+  return cfg
+}
+
+
+const RUNTIME_OPTION = defaultFor("RUNTIME_OPTION",{
+                          ScanImages: {
+                            vision: true ,
+                            disabled : false
+                          }
+                        })
+
 const testData = 'test/annotations_data.json';
   // Where we'll config
 const UPLOADS_FOLDER = 'uploads';
@@ -40,14 +60,12 @@ const JPEG_EXTENSION = '.jpg';
 const WATERMARK_PATH = (x) =>  `ref/watermark/${x}.png`
 const bibRegex = /^[A-Z]{0,1}[0-9]{3,5}$/;
 
-const RESIZE_OPTION = process.env.RESIZE_OPTION ? 
-                JSON.parse(process.env.RESIZE_OPTION) : 
-                {
+const RESIZE_OPTION = defaultFor("RESIZE_OPTION", {
                   width: 3072,
                   height: 3072,
                   fit: sharp.fit.inside,
                   position: sharp.strategy.entropy
-                }
+                })
 const THUMBSIZE_OPTION = process.env.THUMBSIZE_OPTION ? 
                 JSON.parse(process.env.THUMBSIZE_OPTION) : 
                 {
@@ -61,22 +79,26 @@ const JPG_OPTIONS = process.env.JPG_OPTIONS ? JSON.parse(process.env.JPG_OPTIONS
 const THUMB_JPG_OPTIONS = process.env.JPG_OPTIONS ? JSON.parse(process.env.JPG_OPTIONS) :
             {quality: 50}
 const NOTIMING_WAYPOINTS = process.env.NOTIMING_WAYPOINTS ?
-            JSON.parse(process.env.NOTIMING_WAYPOINTS) : ['venue','general']
+            JSON.parse(process.env.NOTIMING_WAYPOINTS) : ['VENUE','venue','general']
     
 
 
-const debug = process.env.DEBUG_MODE ? functions.logger.debug : ()=>{}
-const log=functions.logger.log
-const error=functions.logger.error
-
-admin.initializeApp();
+const debug = process.env.DEBUG_MODE>2 ? functions.logger.debug : ()=>{}
+const log= process.env.DEBUG_MODE>1 ? functions.logger.log: ()=>{}
+const error=  functions.logger.error
 
 // Since this code will be running in the Cloud Functions environment
 // we call initialize Firestore without any arguments because it
 // detects authentication from the environment.
-const firestore = admin.firestore();
-firestore.settings({ ignoreUndefinedProperties: true })
+let cfg 
 
+if(admin.apps.length==0) {
+  admin.initializeApp();
+  admin.firestore().settings({ ignoreUndefinedProperties: true });
+  admin.firestore().doc('app/config').onSnapshot(snap=>cfg=snap.data())
+}
+
+// functions.storage.bucket('run-pix.appspot.com')
 let watermarks={}; //key="raceId" : watermark sharp image
 
 
@@ -95,21 +117,24 @@ let watermarks={}; //key="raceId" : watermark sharp image
  * Get dynamic page showing the image
  * Need page url, photo url, thumb url, link event/bib search,
  */ 
-  app.get('/image/:imagePath', (req, res) => {
+  app.get('/image/:imagePath',async (req, res) =>  {
     // @ts-ignore
     //test link http://localhost:5000/image/d2VydW4yMDIzLzUwMzEvMjAyMy0wMy0xM1QxNjozODowMy41Njg5NzN+Z2VuZXJhbH52YWliaGF2flNfRzAzMDAzLmpwZw==
-    let p = mapParams(req.params)
+    let p = await mapParams(req.params);
+    
     return renderImage(res, req, p, );
     
    });
    
  
- app.get('/image/:raceId/:bibNo/:imagePath', (req, res) => {
-  // @ts-ignore
-  //test link http://localhost:5000/image/werun2023/5031/2023-03-13T16:38:03.568973~general~vaibhav~S_G03003.jpg
-  let p = mapParams(req.params)
-  return renderImage(res, req, p, );
-  
+  app.get('/image/:raceId/:bibNo/:imagePath', async (req, res) => {
+    // @ts-ignore
+    //test link http://localhost:5000/image/werun2023/5031/2023-03-13T16:38:03.568973~general~vaibhav~S_G03003.jpg
+    
+    let p = await mapParams(req.params)
+
+    return renderImage(res, req, p, );
+    
  });
  
  app.get('*', function(req, res){
@@ -119,45 +144,87 @@ let watermarks={}; //key="raceId" : watermark sharp image
 });
 
 function renderImage(res, req, p, ) {
-  return res.render('image', {
-    imageUrl: p.imageUrl,
-    previewUrl: p.imageUrl,
-    bibNo: p.bibNo,
-    raceId: p.raceId,
-    pageUrl: p.pageUrl,
-    params: JSON.stringify(req.params),
-  });
+  // preview URL same is image URL
+  if (p.imageUrl) p.previewUrl= p.imageUrl
+
+  return res.render('image', p)//{
+  //   imageUrl: p.imageUrl,
+  //   previewUrl: p.imageUrl,
+  //   bibNo: p.bibNo,
+  //   raceId: p.raceId,
+  //   pageUrl: p.pageUrl,
+  //   raceOrg: p.raceOrg
+  //   params: JSON.stringify(req.params),
+  // });
 }
 
-// import { Buffer } from 'buffer';
-function mapParams(params){
+/**
+ * Map parameters and also read race from firebase
+ * @param {*} params 
+ * @returns 
+ */
+async function mapParams(params){
   // log(params)
-  let raceId,bibNo,imagePath;
+  let p={raceId:null,bibNo:null,imagePath:null};//raceId,bibNo,imagePath;
   if (!params.raceId) {
     let buff = new Buffer.from(params.imagePath, 'base64');
-    [raceId,bibNo,imagePath] = buff.toString('ascii').split('/');
+    [p.raceId,p.bibNo,p.imagePath] = buff.toString('ascii').split('/');
 
   } else {
-    raceId= params.raceId
-    bibNo=params.bibNo
-    imagePath=params.imagePath
+    p.raceId= params.raceId
+    p.bibNo=params.bibNo
+    p.imagePath=params.imagePath
   }
+  
+  let race =  await firebaseGet(`races/${p.raceId}`);
+  p.Name = race.Name
+  p.Location = race.Location
+  p.raceDate = (race.Date.length>10) ? race.Date.substring(0,10) : race.Date
+  p.linkOrg = race.linkOrg
+  p.raceOrg = race.raceOrg
+  p.timeImage = new Date(p.imagePath.split("~")[0])
   // sample image "https://storage.googleapis.com/run-pix.appspot.com/processed/werun2023/2023-03-13T16:38:03.568973~general~vaibhav~S_G03003.jpg"
-  const imageUrl = imagePath.endsWith(JPEG_EXTENSION) ? 
-                    `${GS_URL_PREFIX}processed/${raceId}/${imagePath}` :
-                    `${GS_URL_PREFIX}processed/${raceId}/${imagePath}${JPEG_EXTENSION}` ;
+  p.imageUrl = `${GS_URL_PREFIX}processed/${p.raceId}/${p.imagePath.replace(JPEG_EXTENSION,'')}${JPEG_EXTENSION}` ;
   //  log('Signed-in user:', user);
-  const url = `https://run-pix.web.app/p/${raceId}/${bibNo}`
-  return {imageUrl:imageUrl,
-          bibNo:bibNo,
-          raceId: raceId,
-          pageUrl:url}
+  p.pageUrl = `https://run-pix.web.app/p/${p.raceId}/${p.bibNo}`
+  return p
 }
  // This HTTPS endpoint can  be made accessed by `Authorization` HTTP header
  // with value `Bearer <Firebase ID Token>`.  Not used
  exports.api = functions.https.onRequest(app);
+/* ~~~~~~~~~~~~ 4. Firestore functions  ~~~~~~~~~~~~~ */
 
-/* ~~~~~~~~~~~~ 4. Storage functions  ~~~~~~~~~~~~~ */
+// Listen for changes in all documents in the 'users' collection and all subcollections
+exports.imageUpdate = functions.firestore
+    .document('races/{raceId}/images/{imagePath}')
+    .onUpdate((change, context) => {
+      /**
+       * check the type of update (delete/update/create)
+       * if old.status='active' new.status="inactive":
+       *    delete all reading entries
+       *    delete thumb/and processed images
+       * if old.status='active' new.status="updBib":
+       *    update new readings with bib for each texts
+       *    reprocess bib
+       *    status=active
+       * if old.status='active' new.status="updOrientation:90":
+       *    turn the thumb & processed
+       */
+       if (RUNTIME_OPTION.imageUpdate && RUNTIME_OPTION.imageUpdate.disabled) {
+          log(`Function is disabled due to RUNTIME_OPTION.imageUpdate.disabled=${RUNTIME_OPTION.imageUpdate.disabled}`);
+          return null;
+        }
+      // If we set `/users/marie/incoming_messages/134` to {body: "Hello"} then
+      // context.params.userId == "marie";
+      // context.params.messageCollectionId == "incoming_messages";
+      // context.params.messageId == "134";
+      // ... and ...
+      // change.after.data() == {body: "Hello"}
+      console.debug(context.params)
+      // console.debug(change)
+      return {change,context}
+    });
+/* ~~~~~~~~~~~~ 5. Storage functions  ~~~~~~~~~~~~~ */
 
 
 /**
@@ -179,10 +246,15 @@ function mapParams(params){
  * "{\"bucket\":\"run-pix.appspot.com\",\"name\":\"uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg\",\"contentType\":\"image/jpeg\"}"
  */
 
-exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
+exports.ScanImages = functions.runWith({
+    memory: "1GB", // Ensure the function has enough memory and time
+  }).storage.object().onFinalize(async (object) => {
 
+  if (RUNTIME_OPTION.ScanImages && RUNTIME_OPTION.ScanImages.disabled) {
+        log(`Function is disabled due to RUNTIME_OPTION.ScanImages.disabled=${RUNTIME_OPTION.ScanImages.disabled}`);
+        return null;
   // Ignore images not in uploads
-  if (! object.name.startsWith(`${UPLOADS_FOLDER}/`) && 
+  } else if (! object.name.startsWith(`${UPLOADS_FOLDER}/`) && 
       ! object.name.startsWith(`test/`)) {  
     // Exit if this is triggered on a file that is not an image.
     if (!object.contentType.startsWith('image/')) {
@@ -201,18 +273,15 @@ exports.ScanImages = functions.storage.object().onFinalize(async (object) => {
   let data;
   // Check the image content using the Cloud Vision API.
   try {
-    if (TEST_MODE) { //TEST mode?  if you can read from firestore
+    if (RUNTIME_OPTION.ScanImages && !RUNTIME_OPTION.ScanImages.vision) { 
+      log('Skipping vision text detection')
       data = [{"textAnnotations":[]}]//JSON.parse(fs.readFileSync(testData, 'utf8')) ;
     } else {
       const visionClient = new vision.ImageAnnotatorClient();
       data = await visionClient.textDetection(
         `gs://${object.bucket}/${object.name}`
       );
-      if (false)
-      fs.writeFile(testData, JSON.stringify(data), 'utf8', (err) => {
-        if (err) throw err;
-        log(`The file size ${testData.length} has been saved!`);
-      });
+
     }
   } catch (e) {
     log(`error running computer vision ${testData} ${JSON.stringify(e)}`)
@@ -344,8 +413,10 @@ async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
 
   // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
   const transformer = sharp(); 
-  transformer.resize(  RESIZE_OPTION )
-              .jpeg(JPG_OPTIONS)
+  transformer.rotate()
+             .withMetadata()
+             .resize(  RESIZE_OPTION )
+             .jpeg(    JPG_OPTIONS)
 
   // log(">>>3",JSON.stringify(await image.metadata()).substring(0,200))  
   // log(await watermarkImg.metadata())
@@ -367,7 +438,7 @@ async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
   // else {error('watermarkImg',watermarkImg && (watermarkImg!=NOTFOUND))}
 
   const remoteWriteStream = bucket.file(filePath).createWriteStream(metadata);
-  await image
+  await image.rotate()
       .pipe(transformer)
       // .jpeg(JPG_OPTIONS)
       .pipe(remoteWriteStream)
@@ -388,7 +459,7 @@ function saveThumb(bucket, filePath, image,metadata) {
   transformer.resize(  THUMBSIZE_OPTION)
              .jpeg(THUMB_JPG_OPTIONS)
 
-  image
+  image.rotate()
     .pipe(transformer)
     .toFormat('jpg')
     .pipe(remoteWriteStream);
@@ -471,6 +542,19 @@ async function updFSReadings(raceId, userId, bibStr, timestamp, score,
   // log(x)
 }
 
+async function firebaseGet(path) {
+  var docRef = admin.firestore().doc(path);
+  return docRef.get().then((doc) => {
+    if (doc.exists) {
+        return doc.data();
+    } else {
+        // doc.data() will be undefined in this case
+        console.error(`No document at ${path}`);
+    }
+  }).catch((error) => {
+      console.log("Error getting document:", error);
+  });
+}
 function getIsoDate(date){
   try{
     var isoDate = date.replace(/\.[^/.]+$/, "")

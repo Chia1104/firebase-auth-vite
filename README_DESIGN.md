@@ -44,6 +44,7 @@ photos: Event, WPT
 * Firestore: races/:raceid/
     * doc: [raceId,RD,location,date, status, start time, waypoints, bib pattern]
     * images/time~wpt~user~loc~file   # Text annotations
+        * status: "hidden", none=>active
     * startlist [bib,distance,category,name]
     * readings: 
         * [bib,waypoint,timing,gps]

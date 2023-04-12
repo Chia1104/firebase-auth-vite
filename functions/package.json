@@ -17,6 +17,7 @@
     "sharp": "^0.31.3"
   },
   "devDependencies": {
+    "chai": "^4.3.7",
     "eslint": "^6.8.0",
     "eslint-plugin-promise": "^4.3.1",
     "firebase-functions-test": "^3.0.0",

@@ -15,6 +15,8 @@ let bib = ref(params.bib)
 store.dispatch('getRacesAction')
 
 
+const year=ref(new Date().getUTCFullYear())
+let years=Array(year.value - (year.value - 6)).fill('').map((v, idx) => year.value - idx);
 let klick=() => { 
   
   debugger;
@@ -25,9 +27,12 @@ let klick=() => {
 <template>
   <div class="container mx-auto">
 
-    <h1 @dblclick="klick()" class="text-lg">Results</h1>
-    <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
-                      placeholder="Select a race" class="md:w-14rem w-full" />   
+    <h1 @dblclick="klick()" class="text-lg">Results (COMING SOON)</h1>
+    <div class="p-inputgroup">
+      <Dropdown v-model="year" :options="years" class="max-w-fit p-inputgroup-addon" />
+      <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
+                        placeholder="Select a race" class="md:w-14rem w-full" />   
+    </div>
     <div class="card flex justify-content-center w-full">
       <AutoComplete v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib" 
         :dropdown-click="searchBib" class="w-full" />

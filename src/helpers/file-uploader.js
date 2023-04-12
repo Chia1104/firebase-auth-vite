@@ -1,29 +1,62 @@
-export async function uploadFile(file, url) {
-	// set up the request data
-	let formData = new FormData()
-	formData.append('file', file.file)
+import { storage } from "../../firebase/config"
+import {  ref as dbRef, uploadBytes } from "firebase/storage";
+const UPLOADS_FOLDER = 'uploads';
 
+export async function uploadFile(file, props) {
+	
 	// track status and upload file
 	file.status = 'loading'
-	let response = await fetch(url, { method: 'POST', body: formData })
+
+
+	let timestamp = new Date(file.file.lastModified).toISOString()
+	let uploadPath = `${UPLOADS_FOLDER}/${props.raceId}/${timestamp}~${props.waypoint}~${props.user}~${file.file.name}`
+
+	// console.log(file.file.name);
+	let response = await uploadFiletoGCS(uploadPath, file.file);
+
+	// set up the request data
+	// let formData = new FormData()
+	// formData.append('file', file.file)
+
+	// let response = await fetch(url, { method: 'POST', body: formData })
 
 	// change status to indicate the success of the upload request
-	file.status = response.ok
+	file.status = true;//response.ok
 
 	return response
 }
 
-export function uploadFiles(files, url) {
-	return Promise.all(files.map((file) => uploadFile(file, url)))
+export async function uploadFiletoGCS(uploadPath, file) {
+	// Create file metadata including the content type
+	/** @type {any} */
+	const metadata={
+		contentType: file.type,
+	};
+
+	const storageRef=dbRef(storage, uploadPath);
+
+	// 'file' comes from the Blob or File API
+	return await uploadBytes(storageRef, file, metadata).then((snapshot) => {
+		console.log(`Uploaded ${snapshot.ref.fullPath}`,);
+		return snapshot.name
+		// debugger;
+	}).catch(console.error);
 }
 
-export default function createUploader(url) {
+
+
+export function uploadFiles(files, props) {
+	// debugger;
+	return Promise.all(files.map((file) => uploadFile(file, props)))
+}
+
+export default function createUploader(props) {
 	return {
 		uploadFile: function (file) {
-			return uploadFile(file, url)
+			return uploadFile(file, props)
 		},
 		uploadFiles: function (files) {
-			return uploadFiles(files, url)
+			return uploadFiles(files, props)
 		},
 	}
 }

@@ -1,5 +1,5 @@
 import { signInWithEmailAndPassword,GoogleAuthProvider, signInWithRedirect,signInWithPopup, createUserWithEmailAndPassword, signOut , updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { collection, getFirestore , getDocs  } from "firebase/firestore"; 
+import { collection, doc, getDocs, getDoc  } from "firebase/firestore"; 
 
 import { firebaseAuth, db } from '../../firebase/config';
 
@@ -110,6 +110,22 @@ export const getRaces = () => {
                         let o=x.data();
                         o['id']=x.id;
                         return o})
+            return dat;
+        }).catch((error) => {
+            // doc.data() will be undefined in this case
+            console.debug("No such document!",error);
+            return {}
+        }) 
+}
+
+export const  getDocData = async (path) => {
+    // debugger
+    console.log(path)
+    const docRef = doc(db, path);
+    // console.debug(docRef)
+    return await getDoc(docRef).then((docSnap)=> {
+            let dat= docSnap.data()
+            // console.debug(dat)
             return dat;
         }).catch((error) => {
             // doc.data() will be undefined in this case

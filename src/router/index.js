@@ -2,12 +2,14 @@ import {
     createRouter,
     createWebHistory
 } from "vue-router";
+import { trackRouter } from "vue-gtag-next";
 import TestPage from "../pages/TestPage.vue";
 import HomePage from "../pages/HomePage.vue";
 import ProfilePage from "../pages/ProfilePage.vue";
 import LoginPage from "../pages/LoginPage.vue";
 import RegisterPage from "../pages/RegisterPage.vue";
 import ResultsPage from "../pages/ResultsPage.vue";
+import ImageReviewPage from "../pages/ImageReviewPage.vue";
 import PhotosPage from "../pages/PhotosPage.vue";
 import NotFoundPage from "../pages/exceptions/NotFoundPage.vue";
 import Races from "../pages/Races.vue";
@@ -32,12 +34,26 @@ const routes = [
                 }
             });
         },
-        children: [  {
-            path: '/e/:raceId',
-            name: "Event",
-            component: Race,
-        },]
+        // children: [  {
+        //     path: '/e/:raceId',
+        //     name: "Event",
+        //     component: Race,
+        // },]
     },
+    {
+        path: '/e',
+        name: "Event",
+        // component: Race,
+        children: [{
+            path: ':raceId',
+            component: Race,
+          },
+          {
+            path: ':raceId/i',
+            component: ImageReviewPage,
+          },
+        ],
+  },
     {
         path: '/r',
         name: "Results",
@@ -143,5 +159,6 @@ const router = createRouter({
     routes
 });
 
+trackRouter(router);
 
 export default router;

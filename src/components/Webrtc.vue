@@ -1,61 +1,64 @@
 <template>
   <div id="container">
-    CAMERA
-    <InputSwitch v-model="camera.perm" @click="toggleVideo()" aria-labelledby="single" />
+    <b>CAMERA : {{waypoint}}</b>  <small v-if="['VENUE'].includes(waypoint)"> Not valid for timing</small>
+    <form>
+      
+      <div class="flex flex-column gap-2 p-float-label">
+          <!-- <label for="bib">Bib</label> -->
+          <InputText id="bib" v-model="bib" placeholder="Enter a single bib number" 
+            aria-describedby="bib-help" class="w-1/3"/>
+          <Button v-for="d in race.Distances" @click="recordBib(d)">{{d}}</Button>
+      </div>
+        <!-- <SelectButton :options="race.Distances" :model="distance"></SelectButton> -->
+    </form>
+
+
+    <InputSwitch v-model="camera.perm" @click="toggleVideo()" 
+                @dblclick="klick" aria-labelledby="single" />
     <!-- <ToggleButton v-model="camera.perm" @click="toggleVideo()" onLabel="Camera ON" offLabel="Camera OFF" aria-labelledby="single" /> -->
 
     <!-- <span>getUserMedia ⇒ canvas</span> -->
     <!-- permission {{camera.permission}} -->
-    <div v-if="camera.perm">
 
-      <video playsinline autoplay>
+    <div v-if="camera.perm">
+      <video playsinline autoplay v-if="camera.perm">
         <p>
           Your browser doesn't support HTML video.
         </p>
       </video>
-      <Button @click="capture">Take snapshot</Button>
-      <canvas></canvas>
-      <!-- <p>Draw a frame from the video onto the canvas element using the <code>drawImage()</code> method.</p>
-      <a href="//webrtc.github.io/samples/" title="WebRTC samples homepage">
-              WebRTC samples</a>
-        <p>The variables <code>canvas</code>, <code>video</code> and <code>stream</code> are in global scope, so you can
-            inspect them from the console.</p> -->
+      <div>
+          <Button @click="capture">Take snapshot</Button>
+          <div class="label">Zoom:</div>
+          <input name="zoom" type="range" disabled>
+      </div>
 
-      <!-- <a href="https://github.com/webrtc/samples/tree/gh-pages/src/content/getusermedia/canvas"
-        title="View source for this page on GitHub" id="viewSource">View source on GitHub</a> -->
+      <canvas></canvas>
     </div>
 
+    <div v-else>
+    </div>
   </div>
+  <!-- <button @click="klick">x</button> -->
+
 </template>
 
 <script setup>
-  import {
-    onMounted,
-    reactive
-  } from 'vue'
+  import {    onMounted,    reactive, ref  } from 'vue'
   // import ToggleButton from 'primevue/togglebutton';
-  // import SelectButton from 'primevue/selectbutton';
-  import Button from 'primevue/button';
+  import InputText from 'primevue/inputtext';
+  import SelectButton from 'primevue/selectbutton';
   import InputSwitch from 'primevue/inputswitch';
-  import {
-    getDateTime
-  } from "../helpers"
-  import {
-    db,
-    storage
-  } from "../../firebase/config"
-  import {
-    ref,
-    uploadBytes,
-    uploadString
-  } from "firebase/storage";
-  import {
-    useStore
-  } from "vuex";
+  import { getDateTime  } from "../helpers"
+  import {db,  storage  } from "../../firebase/config"
+  import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
+  import { ref as stoRef,  uploadBytes,  uploadString   } from "firebase/storage";
+  import {    useStore  } from "vuex";
   const store = useStore()
+
   const props = defineProps({
     raceId: String,
     waypoint: String,
+    race: Object,
   })
   const UPLOADS_FOLDER = 'uploads';
 
@@ -65,12 +68,28 @@
   /**
    * navigator.mediaDevices.getSupportedConstraints()  
    */
-
+  const bib = ref("")
+  const distance=ref(null)
   // Put variables in global scope to make them available to the browser console.
   let video = null;
   let canvas = null;
 
-  onMounted(() => startup())
+  const constraints = {
+    audio: false,
+    video: {
+      facingMode: "environment"
+    }
+  };
+  const shadowOptions={
+      shadowOffsetX : 2,
+      shadowOffsetY : 2,
+      shadowBlur : 1,
+      shadowColor : "#FFF4",
+      fillStyle : "Black",
+      font : "20px serif",
+  }
+  const userAgent = navigator.userAgent;
+  // /Android|iPhone|iPad/i.test(navigator.userAgent)
 
   let camera = reactive({
     perm: false,
@@ -89,11 +108,52 @@
 
     navigator.mediaDevices
       .getUserMedia(constraints)
-      .then(handleSuccess)
+      .then(handleMediaSuccess)
       .catch(handleError);
 
 
     getQuery()
+  }
+
+  function handleMediaSuccess(stream) {
+    window.stream = stream; // make stream available to browser console
+    video.srcObject = stream;
+
+    // make track variable available to browser console.
+    const videoTracks = stream.getVideoTracks();
+    console.log('Got stream with constraints:', constraints);
+    console.log(`Using video device: ${videoTracks[0].label}`);
+    const [track] = [window.track] = stream.getVideoTracks();
+    const capabilities = track.getCapabilities();
+    const settings = track.getSettings();
+
+    for (const ptz of ['zoom']) { //'pan', 'tilt', 
+      // Check whether camera supports pan/tilt/zoom.
+      if (!(ptz in settings)) {
+        errorMsg(`Camera does not support ${ptz}.`);
+        continue;
+      }
+
+      // Map it to a slider element.
+      const input = document.querySelector(`input[name=${ptz}]`);
+      input.min = capabilities[ptz].min;
+      input.max = capabilities[ptz].max;
+      input.step = capabilities[ptz].step;
+      input.value = settings[ptz];
+      input.disabled = false;
+      input.oninput = async event => {
+        try {
+          const constraints = {advanced: [{[ptz]: input.value}]};
+          await track.applyConstraints(constraints);
+        } catch (err) {
+          console.error('applyConstraints() failed: ', err);
+        }
+      };
+    }
+  }
+
+  function handleError(error) {
+    console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
   }
 
   function getQuery() {
@@ -111,10 +171,16 @@
   function toggleVideo(e) {
     camera.perm = !camera.perm;
     if (camera.perm){
-      setTimeout(startup,500);
-    }else
+      setTimeout(startup,100);
+    }else{
       video.pause();
-    console.log(camera.perm, e)
+      // video.src=null;
+      for (const track of video.srcObject.getTracks()) {
+        track.stop();
+      }
+      video.srcObject = null;
+    }
+    // console.log(camera.perm, e)
   }
 
   function playPauseMedia() {
@@ -128,17 +194,20 @@
   }
 
 
-  let capture = function () {
+  let capture = function (ts,wpt) {
+    wpt = wpt || props.waypoint
+    let timestamp = ts || new Date().toISOString()
+    let email = userData.email || "userData.email"
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
+    let ctx=canvas.getContext('2d')
+    // ctx.scale(4,4);
+    ctx.drawImage(video, 0, 0, );//canvas.width, canvas.height
     // 'file' comes from the Blob or File API
-    let timestamp = new Date().toISOString()
-    let email = userData.email || "userData.email"
-    let uploadPath = `${UPLOADS_FOLDER}/${props.raceId}/${timestamp}~${props.waypoint}~${email.replace("@","$")}~capture.png`
+    let uploadPath = `${UPLOADS_FOLDER}/${props.raceId}/${timestamp}~${wpt}~${email.replace("@","$")}~capture.png`
 
-    let uploadRef = ref(storage, uploadPath);
+    let uploadRef = stoRef(storage, uploadPath);
     // Create file metadata including the content type
     /** @type {any} */
     const metadata = {
@@ -147,47 +216,50 @@
 
 
     canvas.toBlob(blob => {
-      console.log(`Uploading ${uploadPath}`, blob);
+      console.log(`Uploading ${blob.size}b to ${uploadPath}`, blob);
+
       uploadBytes(uploadRef, blob).then((snapshot) => {
-        console.log('Uploaded a blob or file!', snapshot);
+        console.log(`Uploaded a blob or file! ${snapshot.ref.fullPath}`,snapshot);
+        Object.assign(ctx,shadowOptions)
+        ctx.fillText(uploadPath, 10, 30);
       }).catch(e => {
         console.error("Error uploading " + JSON.stringify(e))
       });
+      
     })
 
   };
 
-  const constraints = {
-    audio: false,
-    video: {
-      facingMode: "environment"
+  onMounted(() => startup())
+
+  let klick=()=>{debugger};
+
+  function recordBib(d){
+    // console.log(bib.value,d)
+    let bibNo=bib.value.trim()
+    let ts=new Date().toISOString()
+    let email = userData.email || "userData.email"    
+    let payload = {bib: bibNo,
+      timestamp :ts,
+      userId: email.replace("@","$"),
+      waypoint: d || props.waypoint 
     }
-  };
+    setDoc(doc(db,`races/${props.raceId}/readings/${ts}_${bibNo}`),payload).then(x=>{
+      console.log(`${bibNo} ${ts} saved for ${d}`,camera.perm)
+      bib.value=''
+    }).catch(console.error)
+    // if camera is on send image too
+    // debugger;
+    if (camera.perm) {
 
-  const userAgent = navigator.userAgent;
-  // /Android|iPhone|iPad/i.test(navigator.userAgent)
-
-  function handleSuccess(stream) {
-    window.stream = stream; // make stream available to browser console
-    video.srcObject = stream;
-  }
-
-  function handleError(error) {
-    console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
+      capture(ts,d)
+    }
   }
 </script>
 
 <style scoped>
+canvas {
+  width: 70vw;
+}
 </style>
 
-<!--
-getUserMedia({
-  audio: true,
-  video: {
-    width: { ideal: 1280 },
-    height: { ideal: 720 }
-  }
-})
-  video: { facingMode: "user" }
-  video: {facingMode: { exact: "environment" }}
--->

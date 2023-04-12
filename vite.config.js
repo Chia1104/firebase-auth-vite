@@ -18,6 +18,7 @@ export default defineConfig({
     // open: '/race/test1',
   },
   build: {
+    minify: false,
     rollupOptions: {
       output: {
         // preserveModules: true,

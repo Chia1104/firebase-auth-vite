@@ -1,12 +1,30 @@
-<h1>Celebrate your sport achivements</h1>
+<h1><img class="col-1" src="https://run-pix.web.app/assets/graphics/logo_runpix.png" alt="RP"/>
+Celebrate your moments</h1>
 <ul>
-    <li>Race Id :  {{raceId}}</li>
-    <li>Bib No :  {{bibNo}}</li>
+    <li>Event: <span class="text-xl">{{Name}}</span>
+        {{#if raceDate}}
+            on {{raceDate}}
+        {{/if}}
+    </li>
+    <li>    
+        {{#if Location}}
+            Location: {{Location}}
+        {{/if}}
+    </li>        
+    <li>
+        Organizer: 
+        {{#if linkOrg}}
+            <a href="{{linkOrg}}">{{raceOrg}}</a> 
+        {{else}}
+            {{raceOrg}}  
+        {{/if}}
+    </li>
+    <li>Bib No :  {{bibNo}}
+        <a class="btn btn-dark mx-4" href="{{pageUrl}}">Extra moments</a>
+    </li>
 </ul>
-<a href="{{pageUrl}}">Click here for more photos</a>
-<br>
-Do share feedback
-<br>
+
+
 <img 
     src="{{imageUrl}}" 
     style="width:90vw;" />

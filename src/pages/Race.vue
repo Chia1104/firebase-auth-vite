@@ -1,61 +1,50 @@
 <template>
+
   <div class="container mx-auto">
     <div class="w-full text-center justify-center flex-col">
-        <div>
-          <Card>
-            <template #title @dblclick="klick"> 
-              Race id {{raceId}}             
-            </template>
-            <template #content>
-              <template v-for="(value, key) in race" >
-                <tr class="p-inputgroup w-full" v-if="!'Waypoints id'.includes(key)">
-                  <td class="p-inputgroup-addon ">
-                      {{key}}
-                  </td>
-                  <td class="p-inputgroup-addon ">
-                    {{ value }}
-                  </td>
-                </tr>
-              </template>
-              <tr>
-                <td class="p-inputgroup-addon w-sm" @click="klick">
-                    Waypoint
-                </td>
-                <td>
-                  <Dropdown v-model="waypoint" :options="race.Waypoints" editable 
-                      placeholder="Select a Waypoint" class="md:w-14rem" />   
-                  <!-- {{ Waypoints }} -->
-                  </td>
-              </tr>
-            </template>
-          </Card>
-        </div>
+      <router-link to="/e" class="text-xl">
+          🔙
+      </router-link>
+      <Card>
+        <template #title > 
+          <span @click="klick">Race id {{raceId}}             </span>
+        </template>
+        <template #content>
+          <!-- <tr><td>Now: {{timer.now}}</td><td>Timer:      {{timer.duration}}</td></tr>
+          
+          <tr><td>{{race.status}}</td><td>          {{timer.start}}</td></tr> -->
+          
+          <tr v-if="option!='Info'">
+            <td class="p-inputgroup-addon w-sm" @click="klick">
+                Waypoint
+            </td>
+            <td>
+              <!-- {{ race }} -->
+              <Dropdown v-model="waypoint" :options="race.Waypoints" editable 
+                  placeholder="Select a Waypoint" class="md:w-14rem" />   
+              </td>
+          </tr>
+        </template>
 
-        <hr/>
-        <Card>
-          <!-- <template #title>
-            Record
-          </template> -->
+      </Card>
+      <SelectButton v-model="option" :options="options"/>
+      <hr/>
+
+      <Card>
           <template #content>
-            <TabView>
-              <TabPanel header="Log">
-                <RaceLog :waypoint="waypoint" :raceId="raceId"/>
-              </TabPanel>
 
-              <TabPanel header="Images">
-                <RaceImages :waypoint="waypoint" 
-                            :bibRegex="race.bibPattern" :raceId="raceId"/>
-              </TabPanel>
+            <race-info-panel v-if="option=='Info'" :waypoint="waypoint"/>
+            <div v-if="option=='Record'">
+              <camera :waypoint="waypoint" :raceId="raceId" :race="race"/>
+              <geo-loc/>
+            </div>
+            <RaceLog v-if="option=='Provisional'" :waypoint="waypoint" :raceId="raceId" :race="race"/>
 
-              <TabPanel header="Record">
-                <camera :waypoint="waypoint" :raceId="raceId"/>
-                <geo-loc/>
-              </TabPanel>
 
-              <TabPanel header="Upload">
-                <Upload :waypoint="waypoint" :raceId="raceId"/>
-              </TabPanel>
-            </TabView>
+            <!-- <RaceImages :waypoint="waypoint" v-if="option=='Images'"
+                        :bibRegex="race.bibPattern" :raceId="raceId"/> -->
+            <router-link :to="'/e/'+raceId+'/i'"><Button>Images</Button></router-link>
+        
           </template>
 
           <!-- <template #footer>
@@ -65,8 +54,7 @@
             <Button name="create" @click="klick">Check</Button>
           </template> -->
                     
-        </Card>       
-      
+      </Card>       
     </div>
   </div>
 </template>
@@ -76,17 +64,22 @@ import { useStore } from 'vuex';
 // import Camera from "../components/Camera.vue";
 import Camera from "../components/Webrtc.vue";
 import GeoLoc from "../components/GeoLoc.vue";
-import Upload from "../components/Upload.vue";
 import RaceLog from "../components/RaceLogCard.vue";
 import RaceImages from "../components/RaceImagesCard.vue";
+import RaceInfoPanel from "../components/RaceInfoPanel.vue";
+
 import Card from 'primevue/card';
 
-import TabView from 'primevue/tabview';
-import TabPanel from 'primevue/tabpanel';
-import Button from 'primevue/button';
+import SelectButton from 'primevue/selectbutton';
+// import TabView from 'primevue/tabview';
+// import TabPanel from 'primevue/tabpanel';
+import Inplace from 'primevue/inplace';
 import Dropdown from 'primevue/dropdown';
-import { computed, ref, reactive } from 'vue';
+import { computed, ref, reactive, defineProps } from 'vue';
 import { useRoute } from 'vue-router';
+let props = defineProps ({
+  option: String
+})
 
 const bibRegexDefault = /^\d{3,5}$/;
 
@@ -95,12 +88,19 @@ const raceId = route.params.raceId
 
 const store = useStore()
 store.dispatch('getRacesAction')
+let waypoint=ref(store.state.datastore.race.waypoint)  //ref("venue")
 
+let raceObj
 let race=computed(()=>{
   let racefilt=store.state.datastore.races.filter(r=>r.id==raceId);
-  if(racefilt.length) return racefilt[0]
-  else return {name:'-',Waypoints:['venue']}
+  if(racefilt.length) {
+    raceObj=JSON.parse(JSON.stringify(racefilt[0]))
+    return raceObj //racefilt[0]
+  }
+  else return {name:'-',Waypoints:['VENUE']}
   });
+
+
 
 
 let bibRegex=computed(()=>{
@@ -114,9 +114,15 @@ let bibRegex=computed(()=>{
     return  bibRegexDefault; 
   } );
 
+let raceStatus=ref("")
+let raceStatusOptions=['Started','Stopped']
+const options = ref(['Record','Start List','Provisional','Final Results',
+                'Upload'                
+            ]); //'Info',,'Images'
+const option = ref(props.option ?? 'Info');
 
-let waypoint=ref("venue")
-console.log({"bibRegex":bibRegex,"race":race,raceId:raceId})
+
+console.log({"bibRegex":bibRegex,"race":race,raceId:raceId,props:props})
 
 let js=(x)=>JSON.parse(JSON.stringify(x))
 
@@ -124,10 +130,56 @@ let klick=() => {
   debugger;
 }
 
-import { useToast } from "primevue/usetoast";
-const toast = useToast();
+var jsonify=function(o){
+    var seen=[];
+    var jso=JSON.stringify(o, function(k,v){
+        if (typeof v =='object') {
+            if ( !seen.indexOf(v) ) { return '__cycle__'; }
+            seen.push(v);
+        } return v;
+    });
+    return jso;
+};
 
-toast.add({ severity: "info", summary: "Success", detail: "File Uploaded", life: 3000 });
+let timer =ref({
+  timerId:null,
+  milliseconds:1000,
+  now:'',
+  time:'',
+  duration:''
+})
+function startTimer() {
+        // console.debug(this)
+        timer.value.timerId = setInterval(getTime, timer.value.milliseconds); //setting the loop with time interval
+}
+function getTime() {
+  let now=new Date()
+  // let timer="Not started"
+  // console.log(race.value.timestamp.start)
+  // if (store.state.datastore.races.length) debugger
+  // if (race && race.value.timestamp && race.value.timestamp.start) {
+  try{
+    timer.value.start = new Date(race.value.timestamp.start)
+    timer.value.duration=new Date(now - timer.value.start)
+  // } else {
+  } catch (e) {
+    timer.value.duration = 'N/A'
+  }
+  timer.value.now=now.toLocaleString()
+}
+function stopGPS() {
+        console.log('stoping Timer ',geoLocPerm)
+        clearInterval(timer.value.timerId); //call this line to stop the loop
+      
+}
+startTimer()
+
+
 
 </script>
 
+<style scoped>
+div.p-selectbutton  ::v-deep(div) {
+  padding: 2px;
+}
+</style>

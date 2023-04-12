@@ -30,9 +30,9 @@ const race = computed(() => {
 
 let fileList; // list of File objects
 const files = ref([]);
-const fileName = computed(() => file.value?.name);
-const fileExtension = computed(() => fileName.value?.substr(fileName.value?.lastIndexOf(".") + 1));
-const fileMimeType = computed(() => file.value?.type);
+// const fileName = computed(() => file.value?.name);
+// const fileExtension = computed(() => fileName.value?.substr(fileName.value?.lastIndexOf(".") + 1));
+// const fileMimeType = computed(() => file.value?.type);
 
 const uploadFile = (event) => {
     fileList=event.target.files
@@ -45,6 +45,7 @@ const uploadFile = (event) => {
                 fileObj[x]=file_i[x];
             }
         };
+        createImage(file_i,i)
         arr.push(fileObj)
     }
 
@@ -75,10 +76,24 @@ const submitFile = async () => {
 
     // 'file' comes from the Blob or File API
     uploadBytes(storageRef, file, metadata).then((snapshot) => {
-      console.log('Uploaded a blob or file!');
+      console.log(`Uploaded a blob or file!`);
+      // debugger;
     });
   }
 };
+
+async function createImage(file_i,i) {
+    var reader = new FileReader();
+    reader.onload = function(event) {
+      const imageUrl = event.target.result;
+      console.debug(event)
+        files.value[i]=imageUrl;
+    }
+    console.log(reader.readAsDataURL(file_i))
+}
+function removeImage(index) {
+  files.value.splice(index, 1)
+}
 function klick(){
     debugger;
 }
@@ -86,6 +101,7 @@ function klick(){
 
 <template>
     {{props.raceId}}/~{{userData.email}}~file
+    {{props.waypoint}}
     <div>
         <input id="upload" type="file" accept=".jpg,.png,image/*" multiple @change="uploadFile" />
         <Button @click="submitFile">Submit</Button>
@@ -93,7 +109,9 @@ function klick(){
         <table>
             <tr v-for="(f,i) in files">
                 <td>{{i}}</td>
-                <td>{{props.waypoint}}~{{new Date(f.lastModified).toISOString()}}~{{f.name}}</td>
+                <td>{{new Date(f.lastModified).toLocaleString()}}</td>
+                <td>{{f.name}}</td>
+                <td>{{f.uploaded?"✅":"▪️"}}</td>
             </tr>
         </table>
     </div>

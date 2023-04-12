@@ -11,7 +11,7 @@ const footer=values.split('\n').filter(x=>x)
 </script>
 
 <template>
-  <div class="grid grid-cols-3 gap-4 mt-4 mx-auto bg-gray-300 hover:items-center">
+  <div class="grid grid-cols-4 gap-4 mt-4 mx-auto bg-gray-300 hover:items-center">
     <!-- <div v-for="x in footer">
         {{x.text}} {{x.link}}
     </div> -->
@@ -23,6 +23,10 @@ const footer=values.split('\n').filter(x=>x)
       <i class="pi pi-star-fill" style="font-size: 1.5rem"></i>
       Feedback
     </a>
+    <a href="https://runpix.page.link/features">
+      <i class="pi pi-user-edit" style="font-size: 1.5rem"></i>
+      Feature requests
+    </a>    
     <a href="https://pcmcrunners.in/#/profile">
       <i class="pi pi-info-circle" style="font-size: 1.5rem"></i>
       Get Fit for FREE
