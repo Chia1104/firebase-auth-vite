@@ -6,6 +6,10 @@
       dateTimeFormat="YYYY-MM-DD HH:mm:SS" placeholder="YYYY-MM-DD HH:MM:SS" mask="9999-99-99 99:99:99"/> -->
       <!-- {{formatDate(startTime)}} -->
   </div> 
+  <Dropdown :options=waypoints v-model="selWpt"/>
+  <Dropdown :options=bibsOptions v-model="bibsVal"/>
+  <Dropdown :options=sortOptions v-model="sortVal"/>
+  <InputText v-model="bibSearch"/>
   <Paginator v-model:first="first" v-model:rows="rows" :totalRecords="entries.length" template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
     currentPageReportTemplate="{first}-{last} of {totalRecords}" />
   <table class="w-full">
@@ -19,8 +23,10 @@
         {{formatDate(entries[i].timestamp)}}
         <i>{{period(entries[i].timestamp)}}</i> 
       </td>
-      <td><b>{{entries[i].bib}}</b>
-      {{entries[i].score}}</td>
+      <td><b>{{entries[i].bib}}</b> 
+      <small>{{abbr(entries[i].name,14)}}</small>
+      <!-- <b>{{entries[i].score}}</b> -->
+      </td>
       <td>
       {{entries[i].waypoint}}
       <u>{{abbr(entries[i].userId)}}</u>
@@ -40,12 +46,13 @@
   <Dialog v-model:visible="visible" modal header="Header" >
 
     <div >
-      {{entries[entryToEdit].userId}}
       <tr v-for="(v,k) in {bib:'Bib',status:'Status [valid or invalid]',waypoint:'Waypoint',
                            timestamp:'Timestamp'}">
         <td>{{v}}</td>
         <td><InputText stype="k=='timestamp'?'datetime-local':'text'" v-model="entries[entryToEdit][k]"/></td>
       </tr>
+      {{entries[entryToEdit].userId}}
+      {{entries[entryToEdit].id}}
       <div v-if="entries[entryToEdit].imagePath"><Image :src="GS_PREFIX+entries[entryToEdit].imagePath"/></div>
     
         <!-- <Image v-tooltip="'Click to see high resolution image'" 
@@ -70,12 +77,11 @@ import { computed, defineProps, ref } from 'vue'
 import { useStore } from 'vuex';
 
 import Paginator from 'primevue/paginator';
-// import DataTable from 'primevue/datatable';
-// import Column from 'primevue/column';
 import Image from 'primevue/image';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
-// import ColumnGroup from 'primevue/columngroup';   // optional
+import Checkbox from 'primevue/checkbox';
+import Dropdown from 'primevue/dropdown';   // optional
 // import Row from 'primevue/row';                   // optional
 import { db, storage } from "../../firebase/config" //storage
 import { collection,query,doc,limit, orderBy ,onSnapshot,getDocs, updateDoc } from "firebase/firestore";
@@ -87,48 +93,115 @@ let props = defineProps({
   waypoint: String,
 })
 const GS_PREFIX='https://storage.googleapis.com/run-pix.appspot.com/'
+const NOMATCH='N/A'
 const store = useStore()
 const races = store.state.datastore.races;
 // const raceStart = new Date(props.race.timestamp.start)
-let entries=ref([])
+
+let entries=computed(()=> {
+  let ret
+  if (selWpt.value){
+     ret = allEntries.value.filter(x=>x.waypoint==selWpt.value)
+  } else{
+    ret = allEntries.value
+  }  
+  // debugger
+  if (bibsVal.value=='Matched'){
+     ret = ret.filter(x=>x.name!=NOMATCH)
+  } else if (bibsVal.value=='N/A'){
+    ret = ret.filter(x=>x.name==NOMATCH)
+  }  
+  console.log(sortVal.value)
+  if (sortVal.value){
+    ret = ret.sort((a,b)=>a.timestamp>b.timestamp)
+  } else{
+    ret = ret.sort((a,b)=>a.timestamp<b.timestamp)
+  }
+  if (bibSearch.value) ret = ret.filter(x=>x.bib.includes(bibSearch.value))
+  return ret
+ })
+
+let allEntries=ref([])
+const bibsOptions = ['Matched','All',NOMATCH] //matched
+const bibsVal = ref('All') //matchedB
+const sortOptions = ['Desc','Asc']
+const sortVal = ref('Asc')
+const bibSearch = ref('')
+const waypoints=ref([]) // availably waypoints
+const selWpt=ref(null) // selected waypoints (for display)
+let bibs=[]
 let raceDoc=doc(db, "races", props.raceId); //
+
 const startTime=computed(()=>{
   try{return new Date(props.race.timestamp.start)}
   catch(e) {return ''}
   })
+
+
+
+const unsubscribe_bibs = onSnapshot(query(
+        collection(raceDoc, "bibs"),), (querySnapshot) => {
+  bibs=[]
+  querySnapshot.forEach(x=>bibs.push(x.data()));
+  // debugger
+  // console.log("Array", entries.value);
+});
+
 
 const q = query(collection(raceDoc, "readings"),
                 orderBy('timestamp','desc')
                 );
 
 const unsubscribe = onSnapshot(q, (querySnapshot) => {
-  entries.value=[]
+  allEntries.value=[]
   querySnapshot.forEach(mapReading);
   // console.log("Array", entries.value);
 });
 
+
 function mapReading(doc){
   let re=RegExp(props.bibRegex ? `^${props.bibRegex}$` : '^\\d{3,5}$')
   let data = doc.data()
-  data.id=doc.id
+  data.id=doc.id 
+  data.name=NOMATCH
+  data.status= 'invalid'
+
   // console.log(re,data,data.bib.search(re))
   if (!data.hasOwnProperty('bib') || doc.id.includes("START")){
     // console.log('nonBib/START',data)
   }else if (data.bib.search(re)!=-1) { // matching bib pattern
-    if(data.hasOwnProperty('timestamp'))
-      data.timestamp=new Date(data.timestamp.replace(/\d\d$/,"$&Z"))
-    // if(data.hasOwnProperty('userId'))
-    //   data.userId=data.userId.substring(0,8)
+    if(data.hasOwnProperty('timestamp')){
+      // console.warn(data.timestamp)
+      data.timestamp=getDateZ(data.timestamp)
+    }
     data.userId= data.userId || 'Unknown'
-    data.status= data.status || 'valid'
+    for (let bib_found of bibs.filter(x=>x.Bib==data.bib)){
+      data.name = bib_found.Name//.Bib
+      data.status= data.status || 'valid'
+      // debugger
+    }    
   } else {
     data.status= data.status || 'incorrect bib'
   }
 
-  entries.value.push(data);
+  allEntries.value.push(data);
+
+  if (!waypoints.value.includes(data.waypoint))
+    waypoints.value.push(data.waypoint)
 
 }
 
+/**
+ * Convert to date adjusting for timezone
+ */
+function getDateZ(d){
+  if (d[d.length-6]) // e.g. +05:30
+    return new Date(d)
+  else if (d[d.length-1]=='Z')
+    return new Date(d)
+  else 
+    return new Date(d+'Z')
+}
 
 
 function klick(){

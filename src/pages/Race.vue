@@ -11,7 +11,6 @@
         </template>
         <template #content>
           <!-- <tr><td>Now: {{timer.now}}</td><td>Timer:      {{timer.duration}}</td></tr>
-          
           <tr><td>{{race.status}}</td><td>          {{timer.start}}</td></tr> -->
           
           <tr v-if="option!='Info'">
@@ -27,6 +26,7 @@
         </template>
 
       </Card>
+
       <SelectButton v-model="option" :options="options"/>
       <hr/>
 
@@ -35,7 +35,9 @@
 
             <race-info-panel v-if="option=='Info'" :waypoint="waypoint"/>
             <div v-if="option=='Record'">
-              <camera :waypoint="waypoint" :raceId="raceId" :race="race"/>
+              <camera :waypoint="waypoint" :raceId="raceId" 
+              :race="race"  /> 
+              <!-- :bibs="bibs" -->
               <geo-loc/>
             </div>
             <RaceLog v-if="option=='Provisional'" :waypoint="waypoint" :raceId="raceId" :race="race"/>
@@ -43,7 +45,7 @@
 
             <!-- <RaceImages :waypoint="waypoint" v-if="option=='Images'"
                         :bibRegex="race.bibPattern" :raceId="raceId"/> -->
-            <router-link :to="'/e/'+raceId+'/i'"><Button>Images</Button></router-link>
+            <!-- <router-link :to="'/e/'+raceId+'/i'"><Button>Images</Button></router-link> -->
         
           </template>
 
@@ -71,8 +73,6 @@ import RaceInfoPanel from "../components/RaceInfoPanel.vue";
 import Card from 'primevue/card';
 
 import SelectButton from 'primevue/selectbutton';
-// import TabView from 'primevue/tabview';
-// import TabPanel from 'primevue/tabpanel';
 import Inplace from 'primevue/inplace';
 import Dropdown from 'primevue/dropdown';
 import { computed, ref, reactive, defineProps } from 'vue';
@@ -152,6 +152,7 @@ function startTimer() {
         // console.debug(this)
         timer.value.timerId = setInterval(getTime, timer.value.milliseconds); //setting the loop with time interval
 }
+
 function getTime() {
   let now=new Date()
   // let timer="Not started"
@@ -167,6 +168,7 @@ function getTime() {
   }
   timer.value.now=now.toLocaleString()
 }
+
 function stopGPS() {
         console.log('stoping Timer ',geoLocPerm)
         clearInterval(timer.value.timerId); //call this line to stop the loop

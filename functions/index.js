@@ -34,7 +34,7 @@ const defaultFor= (OPTION,default_)=>{
     cfg= JSON.parse(process.env[OPTION]) 
   else
     cfg= default_
-  } catch (e) {console.debug(e)}
+  } catch (e) {debug(e)}
   // console.debug(">>>",OPTION,process.env[OPTION],cfg)
   return cfg
 }
@@ -66,25 +66,26 @@ const RESIZE_OPTION = defaultFor("RESIZE_OPTION", {
                   fit: sharp.fit.inside,
                   position: sharp.strategy.entropy
                 })
-const THUMBSIZE_OPTION = process.env.THUMBSIZE_OPTION ? 
-                JSON.parse(process.env.THUMBSIZE_OPTION) : 
-                {
+const THUMBSIZE_OPTION = defaultFor("THUMBSIZE_OPTION",{
                   width: 400,
                   height: 300,
                   fit: sharp.fit.inside,
                   position: sharp.strategy.entropy
-                }
-const JPG_OPTIONS = process.env.JPG_OPTIONS ? JSON.parse(process.env.JPG_OPTIONS) :
-            {quality: 85, progressive: true}
-const THUMB_JPG_OPTIONS = process.env.JPG_OPTIONS ? JSON.parse(process.env.JPG_OPTIONS) :
-            {quality: 50}
-const NOTIMING_WAYPOINTS = process.env.NOTIMING_WAYPOINTS ?
-            JSON.parse(process.env.NOTIMING_WAYPOINTS) : ['VENUE','venue','general']
-    
+                })
+const JPG_OPTIONS = defaultFor("JPG_OPTIONS",{quality: 60, progressive: true})
+const THUMB_JPG_OPTIONS = defaultFor("JPG_OPTIONS",{quality: 30, progressive: true})
+            
+const NOTIMING_WAYPOINTS = defaultFor("NOTIMING_WAYPOINTS", ['VENUE','venue','general'])
+const META_KEYS=['ImageHeight','ImageWidth','ExifVersion', 'DateCreated', 'WhiteBalance', 'FocalLength', 'DigitalCreationTime', 
+              'DateTimeOriginal', 'OffsetTimeOriginal', 'CreateDate', 'SubSecTimeOriginal', 'ModifyDate', 
+              'ApproximateFocusDistance', 'OriginalDocumentID', 'format', "ShutterSpeedValue",
+              'Artist', 'ExposureCompensation', "ImageUniqueID", 'Lens', "FocalLengthIn35mmFormat",
+              'Make',"Model", 'ExposureTime', 'LensModel', 'PreservedFileName', 'Flash', 'ISO',"latitude","longitude"]    
 
+const DEBUG_MODE = defaultFor("DEBUG_MODE",2)
 
-const debug = process.env.DEBUG_MODE>2 ? functions.logger.debug : ()=>{}
-const log= process.env.DEBUG_MODE>1 ? functions.logger.log: ()=>{}
+const debug = DEBUG_MODE>2 ? functions.logger.debug : ()=>{}
+const log= DEBUG_MODE>1 ? functions.logger.log: ()=>{}
 const error=  functions.logger.error
 
 // Since this code will be running in the Cloud Functions environment
@@ -220,7 +221,7 @@ exports.imageUpdate = functions.firestore
       // context.params.messageId == "134";
       // ... and ...
       // change.after.data() == {body: "Hello"}
-      console.debug(context.params)
+      debug(context.params)
       // console.debug(change)
       return {change,context}
     });
@@ -267,7 +268,7 @@ exports.ScanImages = functions.runWith({
 
   var [folder, raceId, waypoint, userId, date, gps, fileName] = parseObjName(object.name)
   if (raceId=='default')
-    log(object,folder, raceId, waypoint, userId, date, gps, fileName)
+    debug(object,folder, raceId, waypoint, userId, date, gps,"file", fileName)
 
 
   let data;
@@ -289,29 +290,37 @@ exports.ScanImages = functions.runWith({
   
   const detections = data[0].textAnnotations;
   
-  // save images/ref data
+
+
+  // PART II   save images/ref data
   try {
-    // log(`getting EXIF/JPG conversion "${object.name}"`);
+
     /** get metadata from the filename race_wpt_user_timestamp */
-    
-    var attrs = await compressImage(raceId,object.name, object.bucket, {});
-    
+    var {attrs,imagePath} = await compressImage(raceId,object.name, object.bucket, {});
+
+    attrs=META_KEYS.reduce((a,x)=>{if(x in attrs)
+                                      a[x]=attrs[x];
+                                  return a},{})
+
     // log("open waypointation codes")
     // var pluscode=encode({  latitude: attrs.latitude,longitude: attrs.longitude})
-    log(`Readings results on image "${object.name}"`, detections.length);
+    log(`AI results on image "${object.name}"`, detections.length);
     let texts=[];    
+    // get ISO Date for correct part TODO
+    let readingDate = getIsoDate(attrs,date)
+
     for (let i = 0; i < detections.length; i++) {
       let d=detections[i]
       // only if it looks like a bib
-      if (d.description.match(bibRegex)) {
+      if (d.description && d.description.match(bibRegex)) {
         try{
 
           let score = processBounding(d.boundingPoly, getImageHeight(attrs))
 
-          // log(i,raceId, userId, d.description, isoDate, score, attrs.imagePath)
           if (NOTIMING_WAYPOINTS.indexOf(waypoint)>=0){
-            await updFSReadings(raceId, userId, d.description, getIsoDate(date), score, 
-                  waypoint, attrs )
+            await updFSReadings(raceId, userId, d.description, 
+                      readingDate, score, 
+                      waypoint, attrs, imagePath )
           }
           // add only new texts in all cases
           if(texts.indexOf(d.description)==-1)
@@ -323,6 +332,7 @@ exports.ScanImages = functions.runWith({
       }
     };
 
+    // trim attributions TODO
     // Saving Image data in firestore.. referred image should be jpg
     log(`updating firestore on image data`)
     await updFSImageData(raceId,fileName, detections, texts, attrs)
@@ -378,11 +388,10 @@ async function compressImage(raceId,filePath, bucketName, metadata) {
   log(`Saving thumb ${thumbsPath}`)
   saveThumb(bucket, thumbsPath, image, metadata);
 
-  let attrs=Object.assign(metadata, {
-    imagePath: newFilePath,
-  })
-  // log("metadata",metadata)
-  return attrs
+  let attrs=metadata;//Object.assign(metadata, {imagePath: newFilePath, })
+  // debug(metadata)
+
+  return {attrs:attrs,imagePath: newFilePath}
 }
 
 async function getImageMetadata(bucket,filePath,metadataReqd=true) {
@@ -418,7 +427,6 @@ async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
              .resize(  RESIZE_OPTION )
              .jpeg(    JPG_OPTIONS)
 
-  // log(">>>3",JSON.stringify(await image.metadata()).substring(0,200))  
   // log(await watermarkImg.metadata())
     
   if (watermarkImg && (watermarkImg!=NOTFOUND)){
@@ -428,7 +436,6 @@ async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
     
     let adjWm=await watermarkImg.resize({ width: RESIZE_OPTION.width})
                                 .toBuffer()
-    console.log(await exifr.parse(adjWm))
       
     transformer
       .composite([{ input: adjWm, gravity: 'south',
@@ -437,7 +444,8 @@ async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
   } 
   // else {error('watermarkImg',watermarkImg && (watermarkImg!=NOTFOUND))}
 
-  const remoteWriteStream = bucket.file(filePath).createWriteStream(metadata);
+  let options = {resumable:false,public:true,metadata:metadata}
+  const remoteWriteStream = bucket.file(filePath).createWriteStream(options);
   await image.rotate()
       .pipe(transformer)
       // .jpeg(JPG_OPTIONS)
@@ -451,7 +459,8 @@ function saveThumb(bucket, filePath, image,metadata) {
 
   // Create write stream for uploading thumbnail
   // const thumbnailUploadStream = bucket.file(thumbFilePath).createWriteStream({metadata});
-  const remoteWriteStream = bucket.file(filePath).createWriteStream({metadata});
+  let options = {resumable:false,public:true,metadata:metadata}
+  const remoteWriteStream = bucket.file(filePath).createWriteStream(options);
 
   // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
   const transformer = sharp();
@@ -518,21 +527,30 @@ async function updFSImageData(raceId, imagePath, detections, texts,exifdata) {
 }
 
 async function updFSReadings(raceId, userId, bibStr, timestamp, score, 
-                             waypoint, attrs ) {
-  
+                             waypoint, attrs, fileName ) {
+                    
   let x= await admin.firestore()
     .collection('races').doc(cleanForFS(raceId))
     .collection("readings").doc(cleanForFS([timestamp,bibStr].join("_")))
     .set({
       bib: bibStr,
       userId: userId,
-      imagePath: attrs.imagePath,
+      imagePath: fileName,
       waypoint: waypoint,
       // latlng: new admin.firestore.GeoPoint(parseFloat(latitude), parseFloat(longitude)),
       timestamp: timestamp,
       score: score
     })
   .then((x) => {
+      log({
+        bib: bibStr,
+        userId: userId,
+        imagePath: fileName,
+        waypoint: waypoint,
+        // latlng: new admin.firestore.GeoPoint(parseFloat(latitude), parseFloat(longitude)),
+        timestamp: timestamp,
+        score: score
+      })
       return x
   })
   .catch((error) => {
@@ -549,20 +567,25 @@ async function firebaseGet(path) {
         return doc.data();
     } else {
         // doc.data() will be undefined in this case
-        console.error(`No document at ${path}`);
+        error(`No document at ${path}`);
     }
   }).catch((error) => {
-      console.log("Error getting document:", error);
+      error("Error getting document:", error);
   });
 }
-function getIsoDate(date){
+function getIsoDate(metadata,date){
+  let isoDate;
   try{
-    var isoDate = date.replace(/\.[^/.]+$/, "")
+    for (let x of ['DateTimeOriginal','DateCreated','CreatedDate']){
+      isoDate=metadata[x].toISOString()//.replace("Z",metadata.OffsetTimeOriginal)
+      debug(x,metadata[x], typeof metadata[x], isoDate,)
+        return isoDate
+    }
+    isoDate = date //.replace(/\.[^/.]+$/, "")
   } catch (e) {
     isoDate = '2000-01-01T10:00:00.000Z' // default date
   }
   return isoDate
-
 }
 
 function parseObjName(name){
@@ -665,26 +688,4 @@ function getImageHeight(meta){
 
 //   return new Promise((resolve, reject) =>
 //       thumbnailUploadStream.on('finish', resolve).on('error', reject));
-// }
-
-// function listTags(tags) {
-//   for (const group in tags) {
-//     for (const name in tags[group]) {
-//       if (group === 'gps') {
-//         console.log(`${group}:${name}: ${tags[group][name]}`);
-//       } else if ((group === 'Thumbnail') && (name === 'type')) {
-//         console.log(`${group}:${name}: ${tags[group][name]}`);
-//       } else if ((group === 'Thumbnail') && (name === 'image')) {
-//         console.log(`${group}:${name}: <image>`);
-//       } else if ((group === 'Thumbnail') && (name === 'base64')) {
-//         console.log(`${group}:${name}: <base64 encoded image>`);
-//       } else if ((group === 'mpf') && (name === 'Images')) {
-//         console.log(`${group}:${name}: ${getMpfImagesDescription(tags[group][name])}`);
-//       } else if (Array.isArray(tags[group][name])) {
-//         console.log(`${group}:${name}: ${tags[group][name].map((item) => item.description).join(', ')}`);
-//       } else {
-//         console.log(`${group}:${name}: ${typeof tags[group][name].description === 'string' ? tags[group][name].description.trim() : tags[group][name].description}`);
-//       }
-//     }
-//   }
 // }

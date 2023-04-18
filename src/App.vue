@@ -12,7 +12,7 @@ const callback = (response) => {
 
 <template>
   <Nav />
-  <div class="mt-20">
+  <div class="mt-20 max-w-screen-md mx-auto">
     <RouterView  />
     <Footer  />
   </div>

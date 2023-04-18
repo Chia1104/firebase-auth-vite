@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps } from 'vue'
+import { defineProps, onMounted, reactive } from 'vue'
 import { useStore } from 'vuex';
 
 defineProps({
@@ -13,17 +13,211 @@ const increment = () => {
   store.dispatch('incrementAction')
 };
 
+
+// This code is adapted from
+// https://rawgit.com/Miguelao/demos/master/mediarecorder.html
+
+'use strict';
+
+/* globals MediaRecorder */
+
+let mediaRecorder;
+let recordedBlobs;
+let button=reactive({"record":{"text":'Start Recording'},"play":{},"download":{}})
+
+const recordButtonListener= () => {
+  // debugger;
+  
+  if (button.record.text === 'Start Recording') {
+    startRecording();
+  } else {
+    stopRecording();
+    button.record.text = 'Start Recording';
+    button.play.disabled = false;
+    button.download.disabled = false;
+    codecPreferences.disabled = false;
+  }
+};
+
+const playButtonListener= () => {
+  const mimeType = codecPreferences.options[codecPreferences.selectedIndex].value.split(';', 1)[0];
+  const superBuffer = new Blob(recordedBlobs, {type: mimeType});
+  recordedVideo.src = null;
+  recordedVideo.srcObject = null;
+  recordedVideo.src = window.URL.createObjectURL(superBuffer);
+  recordedVideo.controls = true;
+  recordedVideo.play();
+};
+
+const downloadButtonListener=  () => {
+  const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = 'test.webm';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, 100);
+};
+
+function handleDataAvailable(event) {
+  console.log('handleDataAvailable', event);
+  if (event.data && event.data.size > 0) {
+    recordedBlobs.push(event.data);
+  }
+}
+
+function getSupportedMimeTypes() {
+  const possibleTypes = [
+    'video/webm;codecs=av1,opus',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=h264,opus',
+    'video/mp4;codecs=h264,aac',
+  ];
+  return possibleTypes.filter(mimeType => {
+    return MediaRecorder.isTypeSupported(mimeType);
+  });
+}
+
+function startRecording() {
+  recordedBlobs = [];
+  const mimeType = 'video/webm;codecs=h264,opus'//codecPreferences.options[codecPreferences.selectedIndex].value;
+  const options = {mimeType};
+
+  try {
+    debugger;
+    mediaRecorder = new MediaRecorder(window.stream, options);
+  } catch (e) {
+    console.error('Exception while creating MediaRecorder:', e);
+    errorMsgElement.innerHTML = `Exception while creating MediaRecorder: ${JSON.stringify(e)}`;
+    return;
+  }
+
+  console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
+  button.record.text = 'Stop Recording';
+  button.play.disabled = true;
+  button.download.disabled = true;
+  codecPreferences.disabled = true;
+  mediaRecorder.onstop = (event) => {
+    console.log('Recorder stopped: ', event);
+    console.log('Recorded Blobs: ', recordedBlobs);
+  };
+  mediaRecorder.ondataavailable = handleDataAvailable;
+  mediaRecorder.start();
+  console.log('MediaRecorder started', mediaRecorder);
+}
+
+function stopRecording() {
+  mediaRecorder.stop();
+}
+
+function handleSuccess(stream) {
+  button.record.disabled = false;
+  console.log('getUserMedia() got stream:', stream);
+  window.stream = stream;
+
+  const gumVideo = document.querySelector('video#gum');
+  gumVideo.srcObject = stream;
+
+  getSupportedMimeTypes().forEach(mimeType => {
+    const option = document.createElement('option');
+    option.value = mimeType;
+    option.innerText = option.value;
+    codecPreferences.appendChild(option);
+  });
+  codecPreferences.disabled = false;
+}
+
+async function init(constraints) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    handleSuccess(stream);
+  } catch (e) {
+    console.error('navigator.getUserMedia error:', e);
+    debugger
+    errorMsgElement.innerHTML = `navigator.getUserMedia error:${e.toString()}`;
+  }
+}
+
+const startButtonListener= async () => {
+    document.querySelector('button#start').disabled = true;
+    const hasEchoCancellation = document.querySelector('#echoCancellation').checked;
+    const constraints = {
+      audio: {
+        echoCancellation: {exact: hasEchoCancellation}
+      },
+      video: {
+        width: 1280, height: 720
+      }
+    };
+    console.log('Using media constraints:', constraints);
+    await init(constraints);
+  };
+onMounted(()=>{
+  codecPreferences = document.querySelector('#codecPreferences');
+  errorMsgElement = document.querySelector('span#errorMsg');
+  recordedVideo = document.querySelector('video#recorded');
+
+})
+let codecPreferences ;
+let errorMsgElement ;
+let recordedVideo ;
+
 </script>
 
 <template>
 
-  <h1 class="test-color">{{ msg }}</h1>
+  <!-- <h1 class="test-color">{{ msg }}</h1> -->
+  <div id="container">
+
+  <h1><a href="//webrtc.github.io/samples/" title="WebRTC samples homepage">WebRTC samples</a>
+      <span @click="debugger;">MediaRecorder</span></h1>
+
+  <p>For more information see the MediaStream Recording API <a
+          href="http://w3c.github.io/mediacapture-record/MediaRecorder.html"
+          title="W3C MediaStream Recording API Editor's Draft">Editor's&nbsp;Draft</a>.</p>
+
+  <video id="gum" playsinline autoplay muted></video>
+  <video id="recorded" playsinline loop></video>
+
+  <div>
+      <Button id="start" @click="startButtonListener">Start camera</Button>
+      <Button id="record" @click="recordButtonListener" 
+        :disabled="button.record.disabled">Start Recording</Button>
+      <Button id="play" @click="playButtonListener" 
+        :disabled="button.play.disabled">Play</Button>
+      <Button id="download" @click="downloadButtonListener" 
+        :disabled="button.download.disabled">Download</Button>
+  </div>
+
+  <div>
+      Recording format: <select id="codecPreferences" disabled></select>
+  </div>
+  <div>
+      <h4>Media Stream Constraints options</h4>
+      <p>Echo cancellation: <input type="checkbox" id="echoCancellation"></p>
+  </div>
+
+  <div>
+      <span id="errorMsg"></span>
+  </div>
+
+  <a href="https://github.com/webrtc/samples/tree/gh-pages/src/content/getusermedia/record"
+      title="View source for this page on GitHub" id="viewSource">View source on GitHub</a>
+
+</div>
+
+<!-- include adapter for srcObject shim -->
+<!-- <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script> -->
+<!-- <script src="js/main.js" async></script> -->
   <button type="button" @click="increment">count is: <p v-text="countExample.count" /></button>
 
 </template>
 
-<style scoped lang="postcss">
-  .test-color {
-    @apply text-blue-400
-  }
+<style scoped >
 </style>

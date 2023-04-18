@@ -118,6 +118,18 @@ export const getRaces = () => {
         }) 
 }
 
+export const getAllDocs = (path) => {
+    const racesRef = collection(db, path);
+    return getDocs(racesRef).then(docSnap=> {
+            let dat= docSnap.docs.map(x=>x.data())
+            return dat;
+        }).catch((error) => {
+            // doc.data() will be undefined in this case
+            console.debug("No such Collection!",error);
+            return {}
+        }) 
+}
+
 export const  getDocData = async (path) => {
     // debugger
     console.log(path)

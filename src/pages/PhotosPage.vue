@@ -6,7 +6,7 @@
       <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
                         placeholder="Select a race" class="md:w-14rem w-full" />   
       <div class="card flex justify-content-center w-full">
-        <Button @click="bibSelection=''"><i class="pi pi-times"></i></Button>
+        <Button @click="bibSelection='';images=[];"><i class="pi pi-times"></i></Button>
         <AutoComplete id="searchBib" v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib" 
           :dropdown-click="searchBib" class="w-full" />
           <!-- <AutoComplete v-model="selectedItem" :suggestions="filteredItems" @complete="searchItems" :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="label" dropdown /> -->

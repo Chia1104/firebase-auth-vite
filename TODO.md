@@ -5,8 +5,12 @@
 * for images for a bib
 * 
 # Todo:
+* timestamp update
+* bib lookup - WIP
+* timestamp from photo internal
+* timestamp from server
 * startlist
-* photoStatus==available UI
+* photoStatus==available UI 
 
 ### current 
 * Event mgt UI finetuning
@@ -39,15 +43,20 @@
 * highlight pictures for the race
 * IMG: watermark
 * SS: INSTA share
-* separate upload bucket
+* separate upload bucket - low
 
+* user profiles
 * UI: Org/roles
 * UI: Race results
 
 * finisher certificate
-* user profiles
+* certificates https://www.npmjs.com/package/google-slides
+* certificate pdf to PNG https://www.npmjs.com/package/pdf-to-png-converter
+
 * online registration
+
 * Shopping cart
+
 * Azure porting face matching
 ###
 * Functions

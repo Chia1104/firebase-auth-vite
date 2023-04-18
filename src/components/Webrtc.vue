@@ -1,8 +1,26 @@
 <template>
-  <div id="container">
+<!-- {{bibs}} -->
+  <div id="container w-3/4">
     <b>CAMERA : {{waypoint}}</b>  <small v-if="['VENUE'].includes(waypoint)"> Not valid for timing</small>
-    <form>
-      
+    <div v-if="bib" id="lookupoverlay" 
+    class="absolute background-0 text-xl text-left text-light">
+      <ul >
+        <li v-for="b in bibs" class="shadow text-ref-600/70 p-1">
+          {{b.Bib}} {{b.Name}}
+        </li>
+      </ul>
+    </div>
+    <!-- <div id="logoverlay" class="absolute bottom-0 left-[50%] text-xl">
+      overlay
+    </div> -->
+    <div v-if="camera.perm">
+      <video playsinline autoplay v-if="camera.perm">
+        <p>
+          Your browser doesn't support HTML video.
+        </p>
+      </video>
+    </div>
+    <form>  
       <div class="flex flex-column gap-2 p-float-label">
           <!-- <label for="bib">Bib</label> -->
           <InputText id="bib" v-model="bib" placeholder="Enter a single bib number" 
@@ -13,38 +31,34 @@
     </form>
 
 
-    <InputSwitch v-model="camera.perm" @click="toggleVideo()" 
-                @dblclick="klick" aria-labelledby="single" />
-    <!-- <ToggleButton v-model="camera.perm" @click="toggleVideo()" onLabel="Camera ON" offLabel="Camera OFF" aria-labelledby="single" /> -->
 
-    <!-- <span>getUserMedia ⇒ canvas</span> -->
-    <!-- permission {{camera.permission}} -->
-
-    <div v-if="camera.perm">
-      <video playsinline autoplay v-if="camera.perm">
-        <p>
-          Your browser doesn't support HTML video.
-        </p>
-      </video>
-      <div>
-          <Button @click="capture">Take snapshot</Button>
-          <div class="label">Zoom:</div>
-          <input name="zoom" type="range" disabled>
+    <div>
+      <div v-if="camera.perm">
+        <Button @click="capture()">Snapshot</Button>
+        <div class="label" @click="klick">Zoom:</div>
+        <input name="zoom" type="range" disabled>
       </div>
-
-      <canvas></canvas>
+      <span>Cam
+        <InputSwitch v-model="camera.perm" label="Camera" @click="toggleVideo()" 
+                  @dblclick="klick" aria-labelledby="single" />
+      </span>
     </div>
-
-    <div v-else>
+    <canvas></canvas>
+    <div>
     </div>
+    <!-- <ToggleButton v-model="camera.perm" @click="toggleVideo()" 
+              onLabel="Turn off Camera" offLabel="Turn on Camera"
+              onIcon="pi pi-check" offIcon="pi pi-camera"
+                @dblclick="klick" aria-labelledby="single" /> -->
   </div>
   <!-- <button @click="klick">x</button> -->
 
 </template>
 
 <script setup>
-  import {    onMounted,    reactive, ref  } from 'vue'
-  // import ToggleButton from 'primevue/togglebutton';
+  import {onMounted, computed,   reactive, ref  } from 'vue'
+  import {getAllDocs} from '../api'
+// import ToggleButton from 'primevue/togglebutton';
   import InputText from 'primevue/inputtext';
   import SelectButton from 'primevue/selectbutton';
   import InputSwitch from 'primevue/inputswitch';
@@ -59,6 +73,7 @@
     raceId: String,
     waypoint: String,
     race: Object,
+    // bibs: Object,
   })
   const UPLOADS_FOLDER = 'uploads';
 
@@ -95,7 +110,6 @@
     perm: false,
     permission: 'N'
   })
-
 
   function startup() {
 
@@ -197,6 +211,7 @@
   let capture = function (ts,wpt) {
     wpt = wpt || props.waypoint
     let timestamp = ts || new Date().toISOString()
+    // debugger
     let email = userData.email || "userData.email"
 
     canvas.width = video.videoWidth;
@@ -230,7 +245,10 @@
 
   };
 
-  onMounted(() => startup())
+  onMounted(() => {
+    startup();
+    getAllDocs(`races/${props.raceId}/bibs`).then(x=>allBibs=x)
+    })
 
   let klick=()=>{debugger};
 
@@ -251,15 +269,25 @@
     // if camera is on send image too
     // debugger;
     if (camera.perm) {
-
       capture(ts,d)
     }
   }
+
+let allBibs=[]
+const bibs = computed((n=10)=> allBibs.filter(x=>
+          x.Bib.includes(bib.value)).slice(0,n))//
+
 </script>
 
 <style scoped>
 canvas {
   width: 70vw;
+}
+
+li.shadow {
+  color: yellow;
+  opacity: .5;
+  text-shadow: black .3em;
 }
 </style>
 

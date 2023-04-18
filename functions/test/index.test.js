@@ -41,7 +41,7 @@ describe('Storage_tests', function () {
     // disable image recognition
     process.env.RUNTIME_OPTION=JSON.stringify({
       ScanImages: {
-        vision: false ,
+        vision: true ,
         disabled : false
       }
     })
@@ -81,7 +81,8 @@ describe('Storage_tests', function () {
       // myFunctions.storage.bucket(config.storageBucket);
       const wrapped = test.wrap(myFunctions.ScanImages);
       const data_JPEG = {bucket: config.storageBucket,
-                  name:'uploads/mychoice23mar/2023-03-15T10:32:48.483381~general~bcoconut~DSC_0466.jpg',
+                  name: 'uploads/testrun/2023-03-12T02:28:48.000Z~VENUE~avinashmane$gmail.com~20230312_075846.jpg',
+                  // name:'uploads/mychoice23mar/2023-03-15T10:32:48.483381~general~bcoconut~DSC_0466.jpg',
                   // name:'uploads/werun2023/2023-03-13T14:28:45.900378~general~vaibhav~S_G01851.jpg', 
                   // name:'uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg',
                   //  name:'uploads/mychoice23feb/2023-02-12T01:26:04.364Z^venue^avinashmane$gmail.com^20230212_065602.jpg',

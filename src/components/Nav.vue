@@ -43,7 +43,7 @@ let site= computed(()=>{
     <div class="flex container w-[100%]">
       <span class="flex items-center w-[70%]">
           <a class="text-primary flex" href="/">
-            <img class="logo" src="/assets/graphics/logo_runpix.png"> {{site}}
+            <img class="logo" src="/assets/graphics/logo_runpix.png" :alt="site"> 
           </a>
       </span>
       <div class="sm:flex items-center w-[30%]  justify-center">
@@ -76,6 +76,6 @@ let site= computed(()=>{
 </template>
 <style scoped>
 img.logo {
-  max-height: 5vw;
+  max-height: 3em;
 }
 </style>

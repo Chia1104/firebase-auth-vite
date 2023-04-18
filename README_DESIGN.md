@@ -51,3 +51,23 @@ photos: Event, WPT
     * results: 
         * [bib,dns/dnf/status,timing, [splits]]
 
+## Modes
+
+      timestamp
+      bib: bibStr,
+      userId: userId,
+      waypoint: 
+      // latlng: 
+      imagePath: fileName,
+      score
+
+* text capture with distance
+    * with missed scan
+* text capture without distance
+* img capture with distance
+    * with extra scan
+* img capture without distance
+* upload with exif date
+* selfie upload
+
+

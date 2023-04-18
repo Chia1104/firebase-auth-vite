@@ -112,7 +112,7 @@ function getURI(i){
 </template>
 
 <style scoped>
-.thumb >>> img {
+.thumb ::v-deep( img) {
   max-width: 10em;
   background-color: blue;
 }
