@@ -1,5 +1,6 @@
 <script setup>
-import { defineProps, onMounted, reactive } from 'vue'
+import { defineProps, onMounted, reactive, ref } from 'vue'
+import Dropdown from 'primevue/dropdown';
 import { useStore } from 'vuex';
 
 defineProps({
@@ -23,25 +24,29 @@ const increment = () => {
 
 let mediaRecorder;
 let recordedBlobs;
-let button=reactive({"record":{"text":'Start Recording'},"play":{},"download":{}})
+let button=reactive({"record":{"text":'Start Recording'},
+                     "play":{},
+                     "download":{},
+                     "mimeType":{"disabled":true}
+                    })
 
 const recordButtonListener= () => {
-  // debugger;
-  
+
   if (button.record.text === 'Start Recording') {
     startRecording();
+    button.record.text = 'Stop Recording';
   } else {
     stopRecording();
     button.record.text = 'Start Recording';
     button.play.disabled = false;
     button.download.disabled = false;
-    codecPreferences.disabled = false;
+    button.mimeType.disabled=false
   }
 };
 
 const playButtonListener= () => {
-  const mimeType = codecPreferences.options[codecPreferences.selectedIndex].value.split(';', 1)[0];
-  const superBuffer = new Blob(recordedBlobs, {type: mimeType});
+  const _mimeType = mimeType.value.split(';', 1)[0];
+  const superBuffer = new Blob(recordedBlobs, {type: _mimeType});
   recordedVideo.src = null;
   recordedVideo.srcObject = null;
   recordedVideo.src = window.URL.createObjectURL(superBuffer);
@@ -77,6 +82,8 @@ function getSupportedMimeTypes() {
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm;codecs=h264,opus',
+  // "video/webm;codecs=daala",
+  // "video/mpeg",
     'video/mp4;codecs=h264,aac',
   ];
   return possibleTypes.filter(mimeType => {
@@ -86,11 +93,11 @@ function getSupportedMimeTypes() {
 
 function startRecording() {
   recordedBlobs = [];
-  const mimeType = 'video/webm;codecs=h264,opus'//codecPreferences.options[codecPreferences.selectedIndex].value;
-  const options = {mimeType};
+  const _mimeType = mimeType.value;
+  const options = {_mimeType};
 
   try {
-    debugger;
+    // debugger;
     mediaRecorder = new MediaRecorder(window.stream, options);
   } catch (e) {
     console.error('Exception while creating MediaRecorder:', e);
@@ -102,7 +109,8 @@ function startRecording() {
   button.record.text = 'Stop Recording';
   button.play.disabled = true;
   button.download.disabled = true;
-  codecPreferences.disabled = true;
+  // codecPreferences.disabled = true;
+  button.mimeType.disable=true
   mediaRecorder.onstop = (event) => {
     console.log('Recorder stopped: ', event);
     console.log('Recorded Blobs: ', recordedBlobs);
@@ -124,13 +132,11 @@ function handleSuccess(stream) {
   const gumVideo = document.querySelector('video#gum');
   gumVideo.srcObject = stream;
 
-  getSupportedMimeTypes().forEach(mimeType => {
-    const option = document.createElement('option');
-    option.value = mimeType;
-    option.innerText = option.value;
-    codecPreferences.appendChild(option);
-  });
-  codecPreferences.disabled = false;
+  mimeOptions.value=getSupportedMimeTypes()
+  if (mimeOptions.value.length) 
+    mimeType.value=mimeOptions.value[0]
+
+  button.mimeType.disable=false
 }
 
 async function init(constraints) {
@@ -152,22 +158,36 @@ const startButtonListener= async () => {
         echoCancellation: {exact: hasEchoCancellation}
       },
       video: {
-        width: 1280, height: 720
+        // width: 1280, height: 720
       }
     };
     console.log('Using media constraints:', constraints);
     await init(constraints);
   };
+
 onMounted(()=>{
-  codecPreferences = document.querySelector('#codecPreferences');
   errorMsgElement = document.querySelector('span#errorMsg');
   recordedVideo = document.querySelector('video#recorded');
 
 })
-let codecPreferences ;
+// let codecPreferences ;
 let errorMsgElement ;
 let recordedVideo ;
 
+const mimeOptions=ref([])
+const mimeType=ref('')
+// rec button
+const isRecording=ref(false)
+const clickRecButton=function(){
+  isRecording.value=!isRecording.value;
+  console.warn(`recording : ${isRecording.value}`)
+	if(isRecording.value){
+
+	}
+	else{
+
+	}
+};	
 </script>
 
 <template>
@@ -184,20 +204,21 @@ let recordedVideo ;
 
   <video id="gum" playsinline autoplay muted></video>
   <video id="recorded" playsinline loop></video>
-
   <div>
+      <button id="recButton" @click="clickRecButton" :class="{ Rec: isRecording, notRec: !isRecording }"></button>
       <Button id="start" @click="startButtonListener">Start camera</Button>
       <Button id="record" @click="recordButtonListener" 
-        :disabled="button.record.disabled">Start Recording</Button>
+        :disabled="button.record.disabled">{{button.record.text}}</Button>
       <Button id="play" @click="playButtonListener" 
         :disabled="button.play.disabled">Play</Button>
       <Button id="download" @click="downloadButtonListener" 
         :disabled="button.download.disabled">Download</Button>
   </div>
-
-  <div>
+  <Dropdown :options="mimeOptions" v-model="mimeType" :disabled="button.mimeType.disable"/>
+  
+  <!-- <div>
       Recording format: <select id="codecPreferences" disabled></select>
-  </div>
+  </div> -->
   <div>
       <h4>Media Stream Constraints options</h4>
       <p>Echo cancellation: <input type="checkbox" id="echoCancellation"></p>
@@ -220,4 +241,38 @@ let recordedVideo ;
 </template>
 
 <style scoped >
+button#recButton {
+	width: 35px;
+	height: 35px;
+	/* font-size: 0;
+	background-color: red; */
+	border: 0;
+	border-radius: 35px;
+	margin: 18px;
+	outline: none;
+}
+
+.notRec{
+	background-color: darkred;
+}
+
+.Rec{
+  background-color: red;
+	animation-name: pulse;
+	animation-duration: 1.5s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+}
+
+@keyframes pulse{
+	0%{
+		box-shadow: 0px 0px 5px 0px rgba(173,0,0,.3);
+	}
+	65%{
+		box-shadow: 0px 0px 5px 13px rgba(173,0,0,.3);
+	}
+	90%{
+		box-shadow: 0px 0px 5px 13px rgba(173,0,0,0);
+	}
+}
 </style>

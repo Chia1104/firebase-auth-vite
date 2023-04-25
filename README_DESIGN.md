@@ -62,12 +62,14 @@ photos: Event, WPT
       score
 
 * text capture with distance
-    * with missed scan
-* text capture without distance
+    _waypoint 5,10_   need text
+* text capture without 
+    _waypoint_ need text
 * img capture with distance
-    * with extra scan
+    _waypoint 5,10_   
+    * with extra bibs  additional bibs
+    * will no bibs  * upload with UNKNOWN
 * img capture without distance
+
 * upload with exif date
 * selfie upload
-
-

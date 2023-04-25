@@ -174,9 +174,9 @@ function getPublicUrl (folder,raceId,file) {return `https://storage.googleapis.c
 const shareableUrl = computed(() => `https://run-pix.web.app/image/${btoa([props.raceId,props.bibNo,imagePath].join('/'))}`)
 const imageData = ref({})
 
-// onMounted (async ()=>imageData.value= await getDocData(imgNode))
+
 function setStatus(x,imgPath){
-  console.debug(x,imgPath)
+  // console.debug(x,imgPath)
   return updateDoc(doc(db,imgNode(raceId,imgPath)),{status:x})  
 }
 

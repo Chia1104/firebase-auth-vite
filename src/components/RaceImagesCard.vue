@@ -101,7 +101,8 @@ function getURI(i){
     <div class="flex flex-wrap bg-gray-200 justify-evenly">      
       <div v-for="i in range(first,rows,images.length)" :key="i" class="thumb">
         <a v-if="images[i]" :href="getURI(i)">
-          <Image v-if="images[i].imagePath"  :src="'https://storage.googleapis.com/run-pix.appspot.com/thumbs/'+raceId+'/'+images[i].imagePath.replace('.png','.jpg')"/>>
+          <Image v-if="images[i].imagePath"  
+          :src="'https://storage.googleapis.com/run-pix.appspot.com/thumbs/'+raceId+'/'+images[i].imagePath.replace('.png','.jpg')"/>
           <!-- <ImageReviewCard  v-bind:raceId="raceId" v-bind:imagePath="images[i].imagePath"/> -->
           <small v-for="t of images[i].textAnnotations">{{t.description}} /</small>
         </a>

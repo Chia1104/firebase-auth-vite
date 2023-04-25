@@ -1,14 +1,17 @@
-    
 <template>
   <div>
-    Start:  {{startTime}} - 
+    Start:  {{startTime.toLocaleString()}} - 
     <!-- <InputMask v-model="startTime" 
       dateTimeFormat="YYYY-MM-DD HH:mm:SS" placeholder="YYYY-MM-DD HH:MM:SS" mask="9999-99-99 99:99:99"/> -->
       <!-- {{formatDate(startTime)}} -->
   </div> 
-  <Dropdown :options=waypoints v-model="selWpt"/>
-  <Dropdown :options=bibsOptions v-model="bibsVal"/>
-  <Dropdown :options=sortOptions v-model="sortVal"/>
+  <div id="selections" class="flex align-items-center">
+    <!-- <label for="showAll" class="ml-2">All:</label> -->
+    <Dropdown :options=showAllOptions v-model="showAll" inputId="showAll" value="showAll" />
+    <Dropdown :options=waypoints v-model="selWpt"/>
+    <Dropdown :options=bibsOptions v-model="bibsVal"/>
+    <Dropdown :options=sortOptions v-model="sortVal"/>
+  </div>
   <InputText v-model="bibSearch"/>
   <Paginator v-model:first="first" v-model:rows="rows" :totalRecords="entries.length" template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
     currentPageReportTemplate="{first}-{last} of {totalRecords}" />
@@ -17,53 +20,70 @@
       <th v-for="h in ['TS','Time','Bib','WP','U','%']">{{h}}</th>
     </tr>
     <tr v-for="i in range(first,rows)">
-    <template v-if="entries[i]">
-      <td>{{i}}</td>
-      <td>
-        {{formatDate(entries[i].timestamp)}}
-        <i>{{period(entries[i].timestamp)}}</i> 
-      </td>
-      <td><b>{{entries[i].bib}}</b> 
-      <small>{{abbr(entries[i].name,14)}}</small>
-      <!-- <b>{{entries[i].score}}</b> -->
-      </td>
-      <td>
-      {{entries[i].waypoint}}
-      <u>{{abbr(entries[i].userId)}}</u>
+      <template v-if="entries[i]">
+        <td>
+          {{i+1}}
+          <i @click="toggleDialog(i)" class="pi pi-pencil" :class="entries[i].status"/>
         </td>
-      <td class="image w-20%">
-          <Image v-if="entries[i].imagePath" preview :src="GS_PREFIX+entries[i].imagePath.replace('processed','thumbs')"/>
-          <span v-else>TEXT</span>
-          <div class="flex ">
-            <i @click="toggleDialog(i)" class="pi pi-pencil"/>
-          </div>
-      </td>
-    </template>
+        <td>
+          {{formatDate(entries[i].timestamp)}}
+          <i>{{period(entries[i].timestamp)}}</i> 
+        </td>
+        <td><b :class="{'line-through text-blue-500' : entries[i].status!='valid'}">{{entries[i].bib}}</b> 
+        <small>{{abbr(entries[i].name,14)}}</small>
+        <!-- <b>{{entries[i].score}}</b> -->
+        </td>
+        <td>
+        {{entries[i].waypoint}}
+        <u>{{abbr(entries[i].userId)}}</u>
+          </td>
+        <td class="image w-20%">
+            <Image v-if="entries[i].imagePath" preview :src="GS_PREFIX+entries[i].imagePath.replace('processed','thumbs')"/>
+            <span v-else>{{entries[i].type}}</span>
+
+            <div class="flex ">
+            </div>
+        </td>
+      </template>
     </tr>
     
   </table>
     
-  <Dialog v-model:visible="visible" modal header="Header" >
+  <Dialog v-model:visible="visible" modal header="Please review carefully" >
 
     <div >
-      <tr v-for="(v,k) in {bib:'Bib',status:'Status [valid or invalid]',waypoint:'Waypoint',
-                           timestamp:'Timestamp'}">
+      <div v-if="entries[entryToEdit].imagePath">
+        <Image :src="GS_PREFIX+entries[entryToEdit].imagePath"/>
+      </div>
+      <tr v-if="race">
+        <td>{{race.status}}</td>
+        <td>{{race.timestamp ? `${new Date(race.timestamp.start).toLocaleTimeString()} "${race.timestamp.start}"`  : ''}}</td>
+      </tr>
+      <tr v-for="(v,k) in {userId:'User',
+                           id:'Id',
+                           score:'Score'}" @dblclick="klick">
+        <td>{{v}}</td>
+        <td>{{entries[entryToEdit][k]}}</td>
+      </tr>
+      <tr v-for="(v,k) in {bib:'Bib',
+                           status:'Status [valid or invalid]',
+                           waypoint:'Waypoint',
+                           type:'Type'}">
         <td>{{v}}</td>
         <td><InputText stype="k=='timestamp'?'datetime-local':'text'" v-model="entries[entryToEdit][k]"/></td>
       </tr>
-      {{entries[entryToEdit].userId}}
-      {{entries[entryToEdit].id}}
-      <div v-if="entries[entryToEdit].imagePath"><Image :src="GS_PREFIX+entries[entryToEdit].imagePath"/></div>
-    
-        <!-- <Image v-tooltip="'Click to see high resolution image'" 
-          class="p-image thumb flex-auto m-2 "
-          v-bind:src="getPublicUrl('processed',raceId,images[entryToEdit].imagePath)" v-bind:aria-label="images[entryToEdit].imagePath"/>
-        <i class="pi pi-trash"/>
-        <small v-for="t of images[entryToEdit].textAnnotations">{{t.description}} /</small> -->
-
+      <tr>
+        <td>Timestamp</td><td><InputText nontype="datetime-local" v-model="entries[entryToEdit].timestamp"/>
+              {{formatDate(entries[entryToEdit].timestamp)}}</td>
+      </tr>
+      <!-- {{period(entries[entryToEdit].timestamp))}} -->
     </div>
-
+    
     <template #footer>
+        <Button v-if="entries[entryToEdit].status=='valid'" label="Invalidate" 
+          @click="setStatus(entries[entryToEdit].id,'invalid')" text />    
+        <Button v-else label="Validate" 
+          @click="setStatus(entries[entryToEdit].id,'valid')" text />    
         <Button label="No" icon="pi pi-times" @click="visible = false" text />
         <Button label="Save" @click="submitChange();visible = false" icon="pi pi-check" autofocus />
     </template>
@@ -92,6 +112,7 @@ let props = defineProps({
   bibRegex: String,
   waypoint: String,
 })
+const race = props.race;
 const GS_PREFIX='https://storage.googleapis.com/run-pix.appspot.com/'
 const NOMATCH='N/A'
 const store = useStore()
@@ -99,36 +120,53 @@ const races = store.state.datastore.races;
 // const raceStart = new Date(props.race.timestamp.start)
 
 let entries=computed(()=> {
-  let ret
-  if (selWpt.value){
-     ret = allEntries.value.filter(x=>x.waypoint==selWpt.value)
+  let ret=JSON.parse(JSON.stringify(allEntries.value))
+  const bibRegExp = race.bibPattern ? RegExp(race.bibPattern) : false
+
+  if (selWpt.value && (selWpt.value!='All') ){
+     ret = ret.filter(x=>x.waypoint==selWpt.value)
   } else{
-    ret = allEntries.value
-  }  
-  // debugger
+    ret = ret
+  }
+  // show All or only valid
+  if (showAll.value=='Valid'){  
+    ret=ret.filter(x=>x.status=='valid')
+  } if (showAll.value=='Invalid'){  
+    ret=ret.filter(x=>x.status!='valid')
+  }
+  console.log(ret.length)
+  // name or pattern matched
+  const matchBib=(x)=> {const patMatch= (x.bib.match(bibRegExp))
+                      // console.warn(`${x.bib}:${patMatch?1:0}||${x.name}>>${patMatch || (x.name!=NOMATCH)}`)
+                      return patMatch || (x.name!=NOMATCH)} 
+
   if (bibsVal.value=='Matched'){
-     ret = ret.filter(x=>x.name!=NOMATCH)
+     ret = ret.filter(matchBib)
   } else if (bibsVal.value=='N/A'){
-    ret = ret.filter(x=>x.name==NOMATCH)
-  }  
-  console.log(sortVal.value)
-  if (sortVal.value){
+    ret = ret.filter(x=>!matchBib(x) )
+  }
+  // sort  
+  if (sortVal.value=="Asc"){
     ret = ret.sort((a,b)=>a.timestamp>b.timestamp)
-  } else{
+  } else {
     ret = ret.sort((a,b)=>a.timestamp<b.timestamp)
   }
+  // search text debugger
   if (bibSearch.value) ret = ret.filter(x=>x.bib.includes(bibSearch.value))
+
   return ret
  })
 
 let allEntries=ref([])
 const bibsOptions = ['Matched','All',NOMATCH] //matched
-const bibsVal = ref('All') //matchedB
+const bibsVal = ref('All') //matched
+const showAll=ref('Valid')
+const showAllOptions=['All','Valid','Invalid']
 const sortOptions = ['Desc','Asc']
-const sortVal = ref('Asc')
+const sortVal = ref('Desc')
 const bibSearch = ref('')
-const waypoints=ref([]) // availably waypoints
-const selWpt=ref(null) // selected waypoints (for display)
+const waypoints=ref(['All']) // availably waypoints
+const selWpt=ref('All') // selected waypoints (for display)
 let bibs=[]
 let raceDoc=doc(db, "races", props.raceId); //
 
@@ -137,22 +175,19 @@ const startTime=computed(()=>{
   catch(e) {return ''}
   })
 
-
-
 const unsubscribe_bibs = onSnapshot(query(
-        collection(raceDoc, "bibs"),), (querySnapshot) => {
+                            collection(raceDoc, "bibs"),), 
+                            (querySnapshot) => {
   bibs=[]
   querySnapshot.forEach(x=>bibs.push(x.data()));
-  // debugger
-  // console.log("Array", entries.value);
+
 });
 
 
-const q = query(collection(raceDoc, "readings"),
-                orderBy('timestamp','desc')
-                );
 
-const unsubscribe = onSnapshot(q, (querySnapshot) => {
+const unsubscribe = onSnapshot(query(collection(raceDoc, "readings"),
+                orderBy('timestamp','desc')), // query 
+                (querySnapshot) => {
   allEntries.value=[]
   querySnapshot.forEach(mapReading);
   // console.log("Array", entries.value);
@@ -164,12 +199,12 @@ function mapReading(doc){
   let data = doc.data()
   data.id=doc.id 
   data.name=NOMATCH
-  data.status= 'invalid'
 
-  // console.log(re,data,data.bib.search(re))
+  
   if (!data.hasOwnProperty('bib') || doc.id.includes("START")){
     // console.log('nonBib/START',data)
   }else if (data.bib.search(re)!=-1) { // matching bib pattern
+    data.status= data.status || 'valid'
     if(data.hasOwnProperty('timestamp')){
       // console.warn(data.timestamp)
       data.timestamp=getDateZ(data.timestamp)
@@ -177,13 +212,12 @@ function mapReading(doc){
     data.userId= data.userId || 'Unknown'
     for (let bib_found of bibs.filter(x=>x.Bib==data.bib)){
       data.name = bib_found.Name//.Bib
-      data.status= data.status || 'valid'
       // debugger
     }    
   } else {
-    data.status= data.status || 'incorrect bib'
+    data.status= 'incorrect bib'
   }
-
+  
   allEntries.value.push(data);
 
   if (!waypoints.value.includes(data.waypoint))
@@ -207,6 +241,7 @@ function getDateZ(d){
 function klick(){
   debugger
 }
+
 
 // Paginator
 const first = ref(0);
@@ -280,6 +315,21 @@ function toggleDialog  (i){
   }
 }
 
+const setStatus=(id,val) =>{
+  const e = allEntries.value.filter(x=>x.id==id)
+  try{
+    e[0].status=val
+  } catch (e) {console.error(e)}
+}
+// function setStatus(x,i){
+//   console.debug(x,entries.value[i].id)
+//   return updateDoc(
+//       doc(db,`races/${props.raceId}/readings/${entries.value[i].id}`),
+//       {status:x}
+//       )  
+// }
+
+
 function submitChange(){
   let re=RegExp(props.bibRegex ? `^${props.bibRegex}$` : '^\\d{3,5}$')
   
@@ -287,6 +337,7 @@ function submitChange(){
     let payload=JSON.parse(JSON.stringify(entries.value[entryToEdit.value]))
     let path=`races/${props.raceId}/readings/${payload.id}`
     delete payload.id
+    // debugger
     // console.debug(typeof payload.timestamp, payload.timestamp)
     payload.timestamp=new Date(payload.timestamp).toISOString()
     console.debug(`Saving ${JSON.stringify(payload)}`)
@@ -307,5 +358,15 @@ td.image {
 
 i {
   color: blue;
+}
+.valid {
+  color: green;
+}
+div#selections ::v-deep(span) {
+  padding: 1px;
+  color: blue;
+}
+.p-paginator {
+  padding: 0px;
 }
 </style>

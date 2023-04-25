@@ -14,7 +14,7 @@
       overlay
     </div> -->
     <div v-if="camera.perm">
-      <video playsinline autoplay v-if="camera.perm">
+      <video id="gum" playsinline autoplay muted v-if="camera.perm">
         <p>
           Your browser doesn't support HTML video.
         </p>
@@ -34,7 +34,7 @@
 
     <div>
       <div v-if="camera.perm">
-        <Button @click="capture()">Snapshot</Button>
+        <Button @click="recordBib(null)">Snapshot</Button>
         <div class="label" @click="klick">Zoom:</div>
         <input name="zoom" type="range" disabled>
       </div>
@@ -44,7 +44,35 @@
       </span>
     </div>
     <canvas></canvas>
-    <div>
+    <div id="video">
+      <!-- <video id="gum" playsinline autoplay muted></video> -->
+      <video id="recorded" playsinline ></video>  <!--loop-->
+      <div>
+          <button id="recButton" @click="clickRecButton" :disabled="button.record.disabled"
+          :class="{ Rec: isRecording, notRec: !isRecording }"></button>
+          <Button id="start" @click="startButtonListener">Start camera</Button>
+          <Button id="record" @click="recordButtonListener" 
+            :disabled="button.record.disabled">{{button.record.text}}</Button>
+          <Button id="play" @click="playButtonListener" 
+            :disabled="button.play.disabled">Play</Button>
+          <!-- <Button id="download" @click="downloadButtonListener" 
+            :disabled="button.download.disabled">Download</Button> -->
+          <Button id="download" @click="uploadVideo" 
+            :disabled="button.download.disabled">Upload</Button>
+      </div>
+      <Dropdown :options="mimeOptions" v-model="mimeType" :disabled="button.mimeType.disable"/>
+      
+      <!-- <div>
+          Recording format: <select id="codecPreferences" disabled></select>
+      </div> -->
+      <div>
+          <h4>Media Stream Constraints options</h4>
+          <p>Echo cancellation: <input type="checkbox" id="echoCancellation"></p>
+      </div>
+
+      <div>
+          <span id="errorMsg"></span>
+      </div>
     </div>
     <!-- <ToggleButton v-model="camera.perm" @click="toggleVideo()" 
               onLabel="Turn off Camera" offLabel="Turn on Camera"
@@ -61,14 +89,17 @@
 // import ToggleButton from 'primevue/togglebutton';
   import InputText from 'primevue/inputtext';
   import SelectButton from 'primevue/selectbutton';
+  import Dropdown from 'primevue/dropdown';
   import InputSwitch from 'primevue/inputswitch';
   import { getDateTime  } from "../helpers"
   import {db,  storage  } from "../../firebase/config"
   import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
   import { ref as stoRef,  uploadBytes,  uploadString   } from "firebase/storage";
-  import {    useStore  } from "vuex";
+  import {  useStore  } from "vuex";
   const store = useStore()
+  const captureCount = store.state.captureCount
 
+  
   const props = defineProps({
     raceId: String,
     waypoint: String,
@@ -76,7 +107,7 @@
     // bibs: Object,
   })
   const UPLOADS_FOLDER = 'uploads';
-
+  const UPLOADVIDS_FOLDER = 'uploadvid'
   
   const userData = store.state.auth.userDetails.userData
 
@@ -138,31 +169,37 @@
     console.log('Got stream with constraints:', constraints);
     console.log(`Using video device: ${videoTracks[0].label}`);
     const [track] = [window.track] = stream.getVideoTracks();
-    const capabilities = track.getCapabilities();
-    const settings = track.getSettings();
+    // debugger;
+    try {
+      const capabilities = track.getCapabilities();
+      const settings = track.getSettings();
 
-    for (const ptz of ['zoom']) { //'pan', 'tilt', 
-      // Check whether camera supports pan/tilt/zoom.
-      if (!(ptz in settings)) {
-        errorMsg(`Camera does not support ${ptz}.`);
-        continue;
-      }
-
-      // Map it to a slider element.
-      const input = document.querySelector(`input[name=${ptz}]`);
-      input.min = capabilities[ptz].min;
-      input.max = capabilities[ptz].max;
-      input.step = capabilities[ptz].step;
-      input.value = settings[ptz];
-      input.disabled = false;
-      input.oninput = async event => {
-        try {
-          const constraints = {advanced: [{[ptz]: input.value}]};
-          await track.applyConstraints(constraints);
-        } catch (err) {
-          console.error('applyConstraints() failed: ', err);
+      for (const ptz of ['zoom']) { //'pan', 'tilt', 
+        // Check whether camera supports pan/tilt/zoom.
+        if (!(ptz in settings)) {
+          errorMsg(`Camera does not support ${ptz}.`);
+          continue;
         }
-      };
+
+        // Map it to a slider element.
+        const input = document.querySelector(`input[name=${ptz}]`);
+        input.min = capabilities[ptz].min;
+        input.max = capabilities[ptz].max;
+        input.step = capabilities[ptz].step;
+        input.value = settings[ptz];
+        input.disabled = false;
+        input.oninput = async event => {
+          try {
+            const constraints = {advanced: [{[ptz]: input.value}]};
+            await track.applyConstraints(constraints);
+          } catch (err) {
+            console.error('applyConstraints() failed: ', err);
+          }
+        };
+      }
+    }
+    catch(err) {
+      console.log('Setting zoom failed: ', JSON.stringify(err).substring(0,80))
     }
   }
 
@@ -208,7 +245,7 @@
   }
 
 
-  let capture = function (ts,wpt) {
+  let capture = function (ts,wpt,counter) {
     wpt = wpt || props.waypoint
     let timestamp = ts || new Date().toISOString()
     // debugger
@@ -217,18 +254,14 @@
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     let ctx=canvas.getContext('2d')
-    // ctx.scale(4,4);
     ctx.drawImage(video, 0, 0, );//canvas.width, canvas.height
     // 'file' comes from the Blob or File API
-    let uploadPath = `${UPLOADS_FOLDER}/${props.raceId}/${timestamp}~${wpt}~${email.replace("@","$")}~capture.png`
+    let uploadPath = `${UPLOADS_FOLDER}/${props.raceId}/${timestamp}~${wpt}~${email.replace("@","$")}~img_${counter}.png`
 
     let uploadRef = stoRef(storage, uploadPath);
-    // Create file metadata including the content type
-    /** @type {any} */
     const metadata = {
       contentType: 'image/png',
     };
-
 
     canvas.toBlob(blob => {
       console.log(`Uploading ${blob.size}b to ${uploadPath}`, blob);
@@ -248,28 +281,37 @@
   onMounted(() => {
     startup();
     getAllDocs(`races/${props.raceId}/bibs`).then(x=>allBibs=x)
+    errorMsgElement = document.querySelector('span#errorMsg');
+    recordedVideo = document.querySelector('video#recorded');
     })
 
   let klick=()=>{debugger};
-
-  function recordBib(d){
-    // console.log(bib.value,d)
-    let bibNo=bib.value.trim()
+  
+  function recordBib(dist){
+    // if bib is mentioned...update firebase
+    const counter=getCaptureCounter();
     let ts=new Date().toISOString()
-    let email = userData.email || "userData.email"    
-    let payload = {bib: bibNo,
-      timestamp :ts,
-      userId: email.replace("@","$"),
-      waypoint: d || props.waypoint 
+    let bibNo=bib.value.trim()
+console.log(dist,bib.value,bibNo)
+    if (bibNo) {
+      
+      let email = userData.email || "userData.email"    
+      let payload = {bib: bibNo,
+        timestamp :ts,
+        type: `keyed ${counter}`,
+        userId: email.replace("@","$"),
+        waypoint: String(dist) || props.waypoint 
+      }
+      setDoc(doc(db,`races/${props.raceId}/readings/${ts}_${bibNo}`),payload).then(x=>{
+        console.log(`${bibNo} ${ts} saved for ${dist}`,camera.perm)
+        bib.value=''
+      }).catch(console.error)
+      // if camera is on send image too
+      // debugger;
     }
-    setDoc(doc(db,`races/${props.raceId}/readings/${ts}_${bibNo}`),payload).then(x=>{
-      console.log(`${bibNo} ${ts} saved for ${d}`,camera.perm)
-      bib.value=''
-    }).catch(console.error)
-    // if camera is on send image too
-    // debugger;
+    // if camera is on them upload image
     if (camera.perm) {
-      capture(ts,d)
+      capture(ts,dist,counter) // assuming waypoint is passed as distance
     }
   }
 
@@ -277,11 +319,206 @@ let allBibs=[]
 const bibs = computed((n=10)=> allBibs.filter(x=>
           x.Bib.includes(bib.value)).slice(0,n))//
 
+// This code is adapted from
+// https://rawgit.com/Miguelao/demos/master/mediarecorder.html
+
+'use strict';
+
+/* globals MediaRecorder */
+
+let mediaRecorder;
+let recordedBlobs=[];
+let button=reactive({"record":{"text":'Start Recording'},
+                     "play":{},
+                     "download":{},
+                     "mimeType":{"disabled":true}
+                    })
+
+const recordButtonListener= () => {
+
+  if (button.record.text === 'Start Recording') {
+    startRecording();
+    button.record.text = 'Stop Recording';
+  } else {
+    stopRecording();
+    button.record.text = 'Start Recording';
+    button.play.disabled = false;
+    button.download.disabled = false;
+    button.mimeType.disabled=false
+  }
+};
+
+const playButtonListener= () => {
+  const _mimeType = mimeType.value.split(';', 1)[0];
+  const superBuffer = new Blob(recordedBlobs, {type: _mimeType});
+  recordedVideo.src = null;
+  recordedVideo.srcObject = null;
+  recordedVideo.src = window.URL.createObjectURL(superBuffer);
+  recordedVideo.controls = true;
+  recordedVideo.play();
+};
+const uploadVideo=(event,wpt,ts) => {
+  const counter = getCaptureCounter()
+  wpt = wpt || props.waypoint
+  let timestamp = ts || new Date().toISOString()
+  // debugger
+  let email = userData.email || "userData.email"
+  let uploadPath = `${UPLOADVIDS_FOLDER}/${props.raceId}/${timestamp}~${wpt}~${email.replace("@","$")}~vid_${counter}.webm`
+  let uploadRef = stoRef(storage, uploadPath);
+  const metadata = {    contentType: 'video/webm', };
+
+  const blob = new Blob(recordedBlobs, metadata);
+  console.log(`Uploading ${blob.size}b to ${uploadPath}`, blob);
+
+  uploadBytes(uploadRef, blob, metadata).then((snapshot) => {
+    console.log(`Uploaded a video! ${snapshot.ref.fullPath}`,snapshot);
+  }).catch(e => {
+    console.error("Error uploading " + JSON.stringify(e))
+  });
+      
+
+}
+const downloadButtonListener=  () => {
+  const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = 'test.webm';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, 100);
+};
+
+function getCaptureCounter() {
+  const counter=store.state.counters.capture;
+  store.dispatch('incrementCountAction', 'capture');
+  return counter;
+}
+
+function handleDataAvailable(event) {
+  console.log('handleDataAvailable', event.data);
+  if (event.data && event.data.size > 0) {
+    recordedBlobs.push(event.data);
+  }
+}
+
+function getSupportedMimeTypes() {
+  const possibleTypes = [
+    'video/webm;codecs=av1,opus',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=h264,opus',
+  // "video/webm;codecs=daala",
+  // "video/mpeg",
+    'video/mp4;codecs=h264,aac',
+  ];
+  return possibleTypes.filter(mimeType => {
+    return MediaRecorder.isTypeSupported(mimeType);
+  });
+}
+
+function startRecording() {
+  // recordedBlobs = [];
+  const _mimeType = mimeType.value;
+  const options = {_mimeType};
+
+  try {
+    // debugger;
+    mediaRecorder = new MediaRecorder(window.stream, options);
+  } catch (e) {
+    console.error('Exception while creating MediaRecorder:', e);
+    errorMsgElement.innerHTML = `Exception while creating MediaRecorder: ${JSON.stringify(e)}`;
+    return;
+  }
+
+  console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
+  button.record.text = 'Stop Recording';
+  button.play.disabled = true;
+  button.download.disabled = true;
+  // codecPreferences.disabled = true;
+  button.mimeType.disable=true
+  mediaRecorder.onstop = (event) => {
+    console.log('Recorder stopped: ', event);
+    console.log('Recorded Blobs: ', recordedBlobs);
+  };
+  mediaRecorder.ondataavailable = handleDataAvailable;
+  mediaRecorder.start();
+  console.log('MediaRecorder started', mediaRecorder);
+}
+
+function stopRecording() {
+  mediaRecorder.stop();
+}
+
+function handleSuccess(stream) {
+  button.record.disabled = false;
+  console.log('getUserMedia() got stream:', stream);
+  window.stream = stream;
+
+  const gumVideo = document.querySelector('video#gum');
+  gumVideo.srcObject = stream;
+
+  mimeOptions.value=getSupportedMimeTypes()
+  if (mimeOptions.value.length) 
+    mimeType.value=mimeOptions.value[0]
+
+  button.mimeType.disable=false
+}
+
+async function init(constraints) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    handleSuccess(stream);
+  } catch (e) {
+    console.error('navigator.getUserMedia error:', e);
+    debugger
+    errorMsgElement.innerHTML = `navigator.getUserMedia error:${e.toString()}`;
+  }
+}
+
+const startButtonListener= async () => {
+    document.querySelector('button#start').disabled = true;
+    const hasEchoCancellation = document.querySelector('#echoCancellation').checked;
+    const constraints = {
+      audio: {
+        echoCancellation: {exact: hasEchoCancellation}
+      },
+      video: {
+        // width: 1280, height: 720
+      }
+    };
+    console.log('Using media constraints:', constraints);
+    await init(constraints);
+  };
+
+// let codecPreferences ;
+let errorMsgElement ;
+let recordedVideo ;
+
+const mimeOptions=ref([])
+const mimeType=ref('')
+// rec button
+const isRecording=ref(false)
+const clickRecButton=function(){
+  isRecording.value=!isRecording.value;
+  console.warn(`recording : ${isRecording.value}`)
+	if(isRecording.value){
+
+	}
+	else{
+
+	}
+};	
+
 </script>
 
 <style scoped>
 canvas {
-  width: 70vw;
+  width: 50vw;
 }
 
 li.shadow {
@@ -289,5 +526,40 @@ li.shadow {
   opacity: .5;
   text-shadow: black .3em;
 }
-</style>
 
+button#recButton {
+	width: 35px;
+	height: 35px;
+	/* font-size: 0;
+	background-color: red; */
+	border: 0;
+	border-radius: 35px;
+	margin: 18px;
+	outline: none;
+}
+
+.notRec{
+	background-color: darkred;
+}
+
+.Rec{
+  background-color: red;
+	animation-name: pulse;
+	animation-duration: 1.5s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+}
+
+@keyframes pulse{
+	0%{
+		box-shadow: 0px 0px 5px 0px rgba(173,0,0,.3);
+	}
+	65%{
+		box-shadow: 0px 0px 5px 13px rgba(173,0,0,.3);
+	}
+	90%{
+		box-shadow: 0px 0px 5px 13px rgba(173,0,0,0);
+	}
+}
+
+</style>

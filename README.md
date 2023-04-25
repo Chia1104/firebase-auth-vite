@@ -81,3 +81,6 @@ https://firebase.google.com/docs/functions/callable
 * also https://github.com/sonakshs/cra-ssr-firebase
 
 * You can see the full application at [vue-ts-firebase-example](https://github.com/Chia1104/vue-ts-firebase-example)
+
+* recording 
+https://codepen.io/aeewhite/pen/BjzbOL

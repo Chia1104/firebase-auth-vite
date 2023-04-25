@@ -5,12 +5,11 @@
 * for images for a bib
 * 
 # Todo:
+* video capture
 * timestamp update
-* bib lookup - WIP
-* timestamp from photo internal
-* timestamp from server
-* startlist
+* startlist screen
 * photoStatus==available UI 
+* timestamp from server
 
 ### current 
 * Event mgt UI finetuning
@@ -19,7 +18,14 @@
 * Start list
 
 ### features
+* **24 Apr**
+    * reading marked with text
+    * race log / provisional changes
+    * bib lookup 
+    * timestamp from photo internal
 
+* **18 Apr**
+    * publish results
 * **9 Apr**
     * race start stop
     * UI: edit race info
@@ -35,7 +41,6 @@
     * two rows fixed/centerd
     * SC: FB share
     * Whatsapp share
-
 
 ### bugs
 
