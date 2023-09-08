@@ -10,7 +10,7 @@
         <AutoComplete id="searchBib" v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib" 
           :dropdown-click="searchBib" class="w-full" />
           <!-- <AutoComplete v-model="selectedItem" :suggestions="filteredItems" @complete="searchItems" :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="label" dropdown /> -->
-        <Button name="searchImages" @click="searchImages">Search Photos</Button>
+        <Button name="searchImages" @click="searchImages">Search Bib</Button>
       </div>                     
     </form>
     <div v-if="bibSelection && raceId" class="w-full text-lg ">
@@ -93,7 +93,7 @@ import { db, storage } from "../../firebase/config"
 const store = useStore()
 store.dispatch('getRacesAction')
 
-const LIMIT_PICS=50
+const LIMIT_PICS=5000
 const route = useRoute();  
 
 
@@ -143,7 +143,7 @@ const searchBib = async (event) => {
             // console.log(`>>`,data)
             _items.push(data);
   });
-
+  
   // map values to list and database
   if(_items.length)    {
     filteredBibObjects.value=_items;
@@ -218,15 +218,17 @@ function toggleDialog  (i){
 }
 
 
-const getPublicUrl = (folder,raceId,file) => `https://storage.googleapis.com/run-pix.appspot.com/${folder}/${raceId}/${file.replace(/.png/i,'.jpg')}`
-const shareableUrl = computed(() => `https://run-pix.web.app/image/${btoa([raceId,bibNo,images.value[entryToEdit.value].imagePath].join('/'))}`)
+const getPublicUrl = (folder,raceId,file) => 
+  `https://storage.googleapis.com/run-pix.appspot.com/${folder}/${raceId}/${file.replace(/.png/i,'.jpg')}`
+const shareableUrl = computed(() => {
+  return `https://run-pix.web.app/image/${btoa([raceId.value,bibNo.value,images.value[entryToEdit.value].imagePath.replace(/.png/i,'.jpg')].join('/'))}`})
 
 // let thumbUrl=ref(getPublicUrl('thumbs',raceId.value,images.value[entryToEdit.value].imagePath))
 // let photoUrl=ref(getPublicUrl('processed',raceId.value,images.value[entryToEdit.value].imagePath))
 function copyUrl(url) {
   url = url || shareableUrl.value
   navigator.clipboard.writeText(url)
-  alert(`URL copied to clipboard ${url}`)
+  alert(`URL copied to clipboard\n\n${url}`)
 }
 </script>
 

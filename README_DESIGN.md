@@ -30,6 +30,18 @@ You can see the full application at [vue-ts-firebase-example](https://github.com
 
 photos: Event, WPT
 
+* security domains:
+    * org [admin: (create,delete,change) for any events]  {e.g. PCMCrunners}
+        * event [admin: (create,delete,change (release results)),timing_team: enter/edit timing,pic: upload/edit pics,]
+* security check:
+    * role: org, event
+        * object: type:id
+        * activity: create, update, view
+* users
+    admin: orgs, events
+    timing: orgs, events
+    photos: orgs, events
+
 ### Paths
  NOTE
  location to be inserted

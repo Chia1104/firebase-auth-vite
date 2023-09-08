@@ -15,7 +15,7 @@
         <Checkbox v-model="showHidden" inputId="showHidden"  value="showHidden" />
         <label for="numTexts" class="ml-2">Numbers of bibs</label>
       <Dropdown v-model="numTexts" inputId="numTexts"  :options="numTextsOptions" multiple/>
-      {{numTexts}}
+      <!-- {{numTexts}} -->
     </div>
     <Paginator v-model:first="first" v-model:rows="rows" :totalRecords="images.length" template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
       currentPageReportTemplate="{first}-{last} of {totalRecords}" />
@@ -74,6 +74,7 @@
     </template>
   </Dialog>
 </template>
+
 <script setup>
 import { computed, defineProps, ref, onMounted, reactive } from 'vue'
 import { useStore } from 'vuex';
@@ -104,9 +105,14 @@ const rows = ref(20);
 const upload = ref(false);
 
 let raceDoc=doc(db, "races", raceId); //
-let images=computed(()=>((numTexts.value==null)? 
-                            allImages.value :
-                            allImages.value.filter(x=>x.textsLen==numTexts.value))
+
+let checkNumTexts = (x) => {
+  if (numTexts.value=="*") return true;
+  else if (numTexts.value=='10+') return (x.textsLen>10)
+  return (x.textsLen==numTexts.value)}
+
+let images=computed(()=>(
+                            allImages.value.filter(checkNumTexts))
                                 .filter(x=> (showHidden.value || x.status!="hidden"))
                             )
 let allImages=ref([])
@@ -139,8 +145,8 @@ let range=(i,j,max)=> ([...Array(j).keys()]
                   )
 // filters
 const showHidden=ref(false)
-const numTexts=ref(null)
-const numTextsOptions= ['',0,1,2,3,4,5,6,7,8,9,10]
+const numTexts=ref("*")
+const numTextsOptions= ['*',0,1,2,3,4,5,6,7,8,9,10,'10+']
 // dialog
 const visible = ref(false)
 const entryToEdit = ref(null)

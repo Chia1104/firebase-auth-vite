@@ -1,9 +1,9 @@
 <template>
 <!-- {{bibs}} -->
-  <div id="container w-3/4">
+  <div id="container w-full">
     <b>CAMERA : {{waypoint}}</b>  <small v-if="['VENUE'].includes(waypoint)"> Not valid for timing</small>
     <div v-if="bib" id="lookupoverlay" 
-    class="absolute background-0 text-xl text-left text-light">
+      class="absolute background-0 text-xl text-left text-light">
       <ul >
         <li v-for="b in bibs" class="shadow text-ref-600/70 p-1">
           {{b.Bib}} {{b.Name}}
@@ -22,7 +22,6 @@
     </div>
     <form>  
       <div class="flex flex-column gap-2 p-float-label">
-          <!-- <label for="bib">Bib</label> -->
           <InputText id="bib" v-model="bib" placeholder="Enter a single bib number" 
             aria-describedby="bib-help" class="w-1/3"/>
           <Button v-for="d in race.Distances" @click="recordBib(d)">{{d}}</Button>
@@ -30,54 +29,55 @@
         <!-- <SelectButton :options="race.Distances" :model="distance"></SelectButton> -->
     </form>
 
-
-
-    <div>
-      <div v-if="camera.perm">
-        <Button @click="recordBib(null)">Snapshot</Button>
-        <div class="label" @click="klick">Zoom:</div>
-        <input name="zoom" type="range" disabled>
-      </div>
-      <span>Cam
-        <InputSwitch v-model="camera.perm" label="Camera" @click="toggleVideo()" 
-                  @dblclick="klick" aria-labelledby="single" />
-      </span>
+    <div v-if="camera.perm">
+      <Button @click="recordBib(null)">Snapshot</Button>
+      <div class="label" @click="klick">Zoom:</div>
+      <input name="zoom" type="range" disabled>
     </div>
-    <canvas></canvas>
-    <div id="video">
-      <!-- <video id="gum" playsinline autoplay muted></video> -->
-      <video id="recorded" playsinline ></video>  <!--loop-->
-      <div>
-          <button id="recButton" @click="clickRecButton" :disabled="button.record.disabled"
-          :class="{ Rec: isRecording, notRec: !isRecording }"></button>
-          <Button id="start" @click="startButtonListener">Start camera</Button>
-          <Button id="record" @click="recordButtonListener" 
-            :disabled="button.record.disabled">{{button.record.text}}</Button>
-          <Button id="play" @click="playButtonListener" 
-            :disabled="button.play.disabled">Play</Button>
-          <!-- <Button id="download" @click="downloadButtonListener" 
-            :disabled="button.download.disabled">Download</Button> -->
-          <Button id="download" @click="uploadVideo" 
-            :disabled="button.download.disabled">Upload</Button>
-      </div>
-      <Dropdown :options="mimeOptions" v-model="mimeType" :disabled="button.mimeType.disable"/>
-      
-      <!-- <div>
-          Recording format: <select id="codecPreferences" disabled></select>
-      </div> -->
-      <div>
-          <h4>Media Stream Constraints options</h4>
-          <p>Echo cancellation: <input type="checkbox" id="echoCancellation"></p>
-      </div>
+    <span>Cam
+      <InputSwitch v-model="camera.perm" label="Camera" @click="toggleVideo()" 
+                @dblclick="klick" aria-labelledby="single" />
+    </span>
+    <div  v-if="camera.perm">
 
-      <div>
-          <span id="errorMsg"></span>
-      </div>
+        <canvas></canvas>
+
+        <div id="video">
+          <!-- <video id="gum" playsinline autoplay muted></video> -->
+          <video id="recorded" playsinline ></video>  <!--loop-->
+          <div>
+              <button id="recButton" @click="clickRecButton" :disabled="button.record.disabled"
+              :class="{ Rec: isRecording, notRec: !isRecording }"></button>
+              <!-- <Button id="start" @click="startButtonListener">Start camera</Button> -->
+              <Button id="record" @click="recordButtonListener" 
+                :disabled="button.record.disabled">{{button.record.text}}</Button>
+              <Button id="play" @click="playButtonListener" 
+                :disabled="button.play.disabled">Play</Button>
+              <!-- <Button id="download" @click="downloadButtonListener" 
+                :disabled="button.download.disabled">Download</Button> -->
+              <Button id="download" @click="uploadVideo" 
+                :disabled="button.download.disabled">Upload</Button>
+          </div>
+          <ol>
+            <li  v-for="(v,k) in recordedBlobs">
+              {{k}} {{v.size}}
+              <Button  @click="playButtonListener(k)" 
+                :disabled="button.play.disabled">Play</Button>
+            </li>
+          </ol>
+          <Dropdown :options="mimeOptions" v-model="mimeType" :disabled="button.mimeType.disable"/>
+          
+          <div>
+              <h4>Media Stream Constraints options</h4>
+              <p>Echo cancellation: <input type="checkbox" id="echoCancellation"></p>
+          </div>
+
+          <div>
+            {{recordedBlobs.length}} {{Object.values(recordedBlobs).reduce((sum,f)=>sum=sum+f.size,0)/10**6}}
+              <span>{{errorMsg}}</span>
+          </div>
+        </div>
     </div>
-    <!-- <ToggleButton v-model="camera.perm" @click="toggleVideo()" 
-              onLabel="Turn off Camera" offLabel="Turn on Camera"
-              onIcon="pi pi-check" offIcon="pi pi-camera"
-                @dblclick="klick" aria-labelledby="single" /> -->
   </div>
   <!-- <button @click="klick">x</button> -->
 
@@ -122,8 +122,10 @@
 
   const constraints = {
     audio: false,
+    //  audio: {echoCancellation: {exact: hasEchoCancellation}}
     video: {
-      facingMode: "environment"
+      facingMode: "environment",
+    // width: 1280, height: 720
     }
   };
   const shadowOptions={
@@ -142,7 +144,7 @@
     permission: 'N'
   })
 
-  function startup() {
+  async function startup() {
 
     if (camera.perm==false) return;
 
@@ -151,12 +153,11 @@
     canvas.width = 480;
     canvas.height = 360;
 
-    navigator.mediaDevices
-      .getUserMedia(constraints)
-      .then(handleMediaSuccess)
-      .catch(handleError);
-
-
+    // navigator.mediaDevices
+    //   .getUserMedia(constraints)
+    //   .then(handleMediaSuccess)
+    //   .catch(handleError);
+    await init(constraints);
     getQuery()
   }
 
@@ -177,7 +178,7 @@
       for (const ptz of ['zoom']) { //'pan', 'tilt', 
         // Check whether camera supports pan/tilt/zoom.
         if (!(ptz in settings)) {
-          errorMsg(`Camera does not support ${ptz}.`);
+          errorMsg=`Camera does not support ${ptz}.`;
           continue;
         }
 
@@ -281,7 +282,6 @@
   onMounted(() => {
     startup();
     getAllDocs(`races/${props.raceId}/bibs`).then(x=>allBibs=x)
-    errorMsgElement = document.querySelector('span#errorMsg');
     recordedVideo = document.querySelector('video#recorded');
     })
 
@@ -292,7 +292,7 @@
     const counter=getCaptureCounter();
     let ts=new Date().toISOString()
     let bibNo=bib.value.trim()
-console.log(dist,bib.value,bibNo)
+    // console.log(dist,bib.value,bibNo)
     if (bibNo) {
       
       let email = userData.email || "userData.email"    
@@ -327,7 +327,8 @@ const bibs = computed((n=10)=> allBibs.filter(x=>
 /* globals MediaRecorder */
 
 let mediaRecorder;
-let recordedBlobs=[];
+let recordedBlobs={};
+let tsVideo // timestamp of current video
 let button=reactive({"record":{"text":'Start Recording'},
                      "play":{},
                      "download":{},
@@ -339,6 +340,7 @@ const recordButtonListener= () => {
   if (button.record.text === 'Start Recording') {
     startRecording();
     button.record.text = 'Stop Recording';
+
   } else {
     stopRecording();
     button.record.text = 'Start Recording';
@@ -348,15 +350,30 @@ const recordButtonListener= () => {
   }
 };
 
-const playButtonListener= () => {
+const playButtonListener= (idx) => {
   const _mimeType = mimeType.value.split(';', 1)[0];
-  const superBuffer = new Blob(recordedBlobs, {type: _mimeType});
+  let superBuffer
+  // debugger// console.warn(idx)
+
+  if (idx in recordedBlobs){
+    superBuffer = recordedBlobs[idx]
+  } else {
+    superBuffer = new Blob(Object.values(recordedBlobs), {type: _mimeType});
+  }
   recordedVideo.src = null;
   recordedVideo.srcObject = null;
   recordedVideo.src = window.URL.createObjectURL(superBuffer);
+  recordedVideo.addEventListener("ended", (event) => {
+    URL.revokeObjectURL(recordedVideo.src);
+  console.log(
+    "Video stopped either because it has finished playing or no further data is available."
+    );
+  });
   recordedVideo.controls = true;
   recordedVideo.play();
 };
+
+
 const uploadVideo=(event,wpt,ts) => {
   const counter = getCaptureCounter()
   wpt = wpt || props.waypoint
@@ -367,7 +384,7 @@ const uploadVideo=(event,wpt,ts) => {
   let uploadRef = stoRef(storage, uploadPath);
   const metadata = {    contentType: 'video/webm', };
 
-  const blob = new Blob(recordedBlobs, metadata);
+  const blob = new Blob(Object.values(recordedBlobs), metadata);
   console.log(`Uploading ${blob.size}b to ${uploadPath}`, blob);
 
   uploadBytes(uploadRef, blob, metadata).then((snapshot) => {
@@ -379,7 +396,7 @@ const uploadVideo=(event,wpt,ts) => {
 
 }
 const downloadButtonListener=  () => {
-  const blob = new Blob(recordedBlobs, {type: 'video/webm'});
+  const blob = new Blob(Object.values(recordedBlobs), {type: 'video/webm'});
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.style.display = 'none';
@@ -400,10 +417,18 @@ function getCaptureCounter() {
 }
 
 function handleDataAvailable(event) {
-  console.log('handleDataAvailable', event.data);
+  // timeStamp
+  let ts
+  
+  ts = tsVideo.includes('STOP') ? tsVideo.split("STOP")[0] : tsVideo
+  
   if (event.data && event.data.size > 0) {
-    recordedBlobs.push(event.data);
+    recordedBlobs[ts]=event.data;
   }
+  // start time for next video
+  tsVideo=tsVideo.includes('STOP') ? '' : new Date().toISOString()
+  console.log(`handleDataAvailable ${tsVideo} ${ts}`, event.data);
+
 }
 
 function getSupportedMimeTypes() {
@@ -427,11 +452,12 @@ function startRecording() {
   const options = {_mimeType};
 
   try {
-    // debugger;
     mediaRecorder = new MediaRecorder(window.stream, options);
+    tsVideo=new Date().toISOString();
+    recordedBlobs[tsVideo]='WIP';
   } catch (e) {
     console.error('Exception while creating MediaRecorder:', e);
-    errorMsgElement.innerHTML = `Exception while creating MediaRecorder: ${JSON.stringify(e)}`;
+    errorMsg = `Exception while creating MediaRecorder: ${JSON.stringify(e)}`;
     return;
   }
 
@@ -439,7 +465,6 @@ function startRecording() {
   button.record.text = 'Stop Recording';
   button.play.disabled = true;
   button.download.disabled = true;
-  // codecPreferences.disabled = true;
   button.mimeType.disable=true
   mediaRecorder.onstop = (event) => {
     console.log('Recorder stopped: ', event);
@@ -452,6 +477,7 @@ function startRecording() {
 
 function stopRecording() {
   mediaRecorder.stop();
+  tsVideo=tsVideo+'STOP'
 }
 
 function handleSuccess(stream) {
@@ -471,12 +497,13 @@ function handleSuccess(stream) {
 
 async function init(constraints) {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const stream = await navigator.mediaDevices
+                .getUserMedia(constraints);
     handleSuccess(stream);
   } catch (e) {
     console.error('navigator.getUserMedia error:', e);
-    debugger
-    errorMsgElement.innerHTML = `navigator.getUserMedia error:${e.toString()}`;
+    // debugger
+    errorMsg = `navigator.getUserMedia error:${e.toString()}`;
   }
 }
 
@@ -496,7 +523,7 @@ const startButtonListener= async () => {
   };
 
 // let codecPreferences ;
-let errorMsgElement ;
+let errorMsg ;
 let recordedVideo ;
 
 const mimeOptions=ref([])

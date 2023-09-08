@@ -143,7 +143,7 @@ let flagOff=(e,a)=>{
     'races',raceId,'readings',`${now}_START_${props.waypoint}`),
     {
       timestamp: now,
-      user: store.state.auth.userDetails.userData.email
+      userId: store.state.auth.userDetails.userData.email
     }
   );
   console.debug(ts)

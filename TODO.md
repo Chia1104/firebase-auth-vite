@@ -3,21 +3,32 @@
 ## use case
 * find timing from images
 * for images for a bib
-* 
+ 
 # Todo:
+
 * video capture
+* user permissions
 * timestamp update
 * startlist screen
 * photoStatus==available UI 
 * timestamp from server
+* Logic to add timing entry: need lot of work
 
 ### current 
+* defect: merge two fields 'user' for start else 'userId'
 * Event mgt UI finetuning
 * backend changes
     * change image waypoint
 * Start list
+* SVG logos
+    * event logos
 
 ### features
+* **14May**
+    * several WIP change for race management
+    * function generated page has ext .png.jpg instead of .jpg
+    * share url working now
+
 * **24 Apr**
     * reading marked with text
     * race log / provisional changes
@@ -35,7 +46,7 @@
     * direct link to bib
     * dynamic page with OG tags
     * upload time bookmark
-* Mar 2023
+* **Mar 2023**
     * IMG: dynamic resize (backend)
     * Default watermark (blank)
     * two rows fixed/centerd
@@ -43,7 +54,6 @@
     * Whatsapp share
 
 ### bugs
-
 ### roadmap
 * highlight pictures for the race
 * IMG: watermark

@@ -41,7 +41,7 @@ describe('Storage_tests', function () {
     // disable image recognition
     process.env.RUNTIME_OPTION=JSON.stringify({
       ScanImages: {
-        vision: true ,
+        vision: false,
         disabled : false
       }
     })
@@ -73,15 +73,17 @@ describe('Storage_tests', function () {
       assert.isDefined(myFunctions)
     })
 
-    it('Process the PNG image', async function () {
+    it('ScanImages_JPG image', async function () {
       this.timeout(20000); // A very long environment setup.
       process.env.RUNTIME_OPTION=JSON.stringify({scanImages:{vision:false}})
-      
+
       // Wrap the makeUppercase function
       // myFunctions.storage.bucket(config.storageBucket);
       const wrapped = test.wrap(myFunctions.ScanImages);
       const data_JPEG = {bucket: config.storageBucket,
-                  name: 'uploads/testrun/2023-03-12T02:28:48.000Z~VENUE~avinashmane$gmail.com~20230312_075846.jpg',
+                  name: 'uploads/mychoice23jul/2023-07-09T04:53:45.692Z~VENUE~jparagj$gmail.com~1P6A7097.jpg', 
+                  // name: 'uploads/lsom23jun/2023-06-27T11:17:58.853Z~VENUE~vishal64049$gmail.com~IMG_1736.JPG',
+                  // name: 'uploads/testrun/2023-03-12T02:28:48.000Z~VENUE~avinashmane$gmail.com~20230312_075846.jpg',
                   // name:'uploads/mychoice23mar/2023-03-15T10:32:48.483381~general~bcoconut~DSC_0466.jpg',
                   // name:'uploads/werun2023/2023-03-13T14:28:45.900378~general~vaibhav~S_G01851.jpg', 
                   // name:'uploads/werun2023/2023-03-13T19:25:41.041091~general~vaibhav~_L3A3047.jpg',
@@ -89,17 +91,23 @@ describe('Storage_tests', function () {
                   //  name:'uploads/mychoice23feb/2023-02-12T01:28:29.364Z^venue^avinashmane$gmail.com^20230212_065828.jpg',
                    contentType: 'image/jpeg'};
                   //  https://storage.googleapis.com/run-pix.appspot.com/uploads/mychoice23mar/2022-01-13T12%3A23%3A36.476Z%5Estart%5Eavinashmane%40gmail.com%5E9955-3Certificate.png             
+      await wrapped(data_JPEG)
+
+    })
+    it('ScanImages PNG image', async function () {
+      this.timeout(20000); // A very long environment setup.
+      process.env.RUNTIME_OPTION=JSON.stringify({scanImages:{vision:false}})
+      
+      // Wrap the makeUppercase function
+      // myFunctions.storage.bucket(config.storageBucket);
+      const wrapped = test.wrap(myFunctions.ScanImages);
       const data_PNG = {bucket:config.storageBucket,
                       // name:'test/V4AFod9aCoRsEP62GnVm0gPYxXK2/2023-01-27T11:31:41.796Z.png',
                       // name:'uploads/mychoice23mar/2022-01-13T12:23:36.476Z^start^avinashmane$gmail.com^9955-3Certificate.png ',
                       name: 'uploads/mychoice23mar/2023-03-14T13:01:08.206Z^venue^avinashmane$gmail.com^capture.png',
                       contentType: 'image/png'};// PNG captured for the stream
-      await wrapped(data_JPEG)
-      // .then(x=>{
-      //   console.debug(x)
-      //   done()}
-      //   )
-      //   .catch((e)=>done(e))
+
+      await wrapped(data_PNG)
 
     })
 
