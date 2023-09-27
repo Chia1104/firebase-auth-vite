@@ -1,0 +1,70 @@
+{
+  "name": "nodejs-image-processing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloud Storage-triggered image processing with Cloud Vision API and ImageMagick transformation.",
+  "main": "index.js",
+  "author": "Google LLC",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start": "set GOOGLE_APPLICATION_CREDENTIALS=c:/i/auth/run-pix-092258e3cb1b.json&& node index.js",
+    "test": "c8 mocha -p -j 2 test/app.test.js --check-leaks --timeout=5000 --watch",
+    "system-test": "c8 mocha -p -j 2 test/system.test.js --timeout=360000 --exit"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^7.0.0",
+    "@google-cloud/vision": "^3.0.0",
+    "@vladmandic/pilogger": "^0.4.8",
+    "dotenv": "^16.3.1",
+    "express": "^4.16.4",
+    "face-api.js": "^0.22.2",
+    "gm": "^1.23.1"
+  },
+  "devDependencies": {
+    "c8": "^8.0.0",
+    "google-auth-library": "^9.0.0",
+    "got": "^11.5.0",
+    "mocha": "^10.0.0",
+    "supertest": "^6.0.0"
+  },
+  "removedDeps": {
+    "@canvas/image": "^1.0.1",
+    "@microsoft/api-extractor": "^7.35.2",
+    "@tensorflow/tfjs": "^4.7.0",
+    "@tensorflow/tfjs-backend-cpu": "^4.7.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.7.0",
+    "@tensorflow/tfjs-backend-webgl": "^4.7.0",
+    "@tensorflow/tfjs-backend-webgpu": "4.7.0",
+    "@tensorflow/tfjs-converter": "^4.7.0",
+    "@tensorflow/tfjs-core": "^4.7.0",
+    "@tensorflow/tfjs-data": "^4.7.0",
+    "@tensorflow/tfjs-layers": "^4.7.0",
+    "@tensorflow/tfjs-node": "^4.7.0",
+    "@tensorflow/tfjs-node-gpu": "^4.7.0",
+    "@types/node": "^20.3.0",
+    "@types/offscreencanvas": "^2019.7.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.9",
+    "@typescript-eslint/parser": "^5.59.9",
+    "@vladmandic/build": "^0.9.2",
+    "@vladmandic/pilogger": "^0.4.8",
+    "esbuild": "^0.18.1",
+    "eslint": "^8.42.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-json": "^3.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "rimraf": "^5.0.1",
+    "seedrandom": "^3.0.5",
+    "tslib": "^2.5.3",
+    "typedoc": "^0.24.8",
+    "typescript": "5.1.3"
+  }
+}

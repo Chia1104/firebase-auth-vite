@@ -1,6 +1,7 @@
 import { storage } from "../../firebase/config"
 import {  ref as dbRef, uploadBytes } from "firebase/storage";
-const UPLOADS_FOLDER = 'uploads';
+import { config } from "../config"
+// const UPLOADS_FOLDER = 'uploads';
 
 export async function uploadFile(file, props) {
 	
@@ -9,16 +10,10 @@ export async function uploadFile(file, props) {
 
 
 	let timestamp = new Date(file.file.lastModified).toISOString()
-	let uploadPath = `${UPLOADS_FOLDER}/${props.raceId}/${timestamp}~${props.waypoint}~${props.user}~${file.file.name}`
+	let uploadPath = `${config.storage.uploads}/${props.raceId}/${timestamp}~${props.waypoint}~${props.user}~${file.file.name}`
 
 	// console.log(file.file.name);
 	let response = await uploadFiletoGCS(uploadPath, file.file);
-
-	// set up the request data
-	// let formData = new FormData()
-	// formData.append('file', file.file)
-
-	// let response = await fetch(url, { method: 'POST', body: formData })
 
 	// change status to indicate the success of the upload request
 	file.status = true;//response.ok

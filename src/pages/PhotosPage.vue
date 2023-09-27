@@ -1,22 +1,36 @@
 
 <template >
-  <div class="container mx-auto ">
+  
+  <div class="container mx-auto gap-3">
     <h1 @dblclick="klick()">Photos</h1>
     <form @submit="searchImages" class="gap-2">
       <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
                         placeholder="Select a race" class="md:w-14rem w-full" />   
       <div class="card flex justify-content-center w-full">
-        <Button @click="bibSelection='';images=[];"><i class="pi pi-times"></i></Button>
-        <AutoComplete id="searchBib" v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib" 
+        <Button @click="bibSelection='';allImages=[];uploadedImage=''" class="p-button-secondary" >
+          <i class="pi pi-times"></i>
+        </Button>
+        <AutoComplete id="searchBib" v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib"  placeholder="Enter your BIB number"
           :dropdown-click="searchBib" class="w-full" />
           <!-- <AutoComplete v-model="selectedItem" :suggestions="filteredItems" @complete="searchItems" :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="label" dropdown /> -->
-        <Button name="searchImages" @click="searchImages">Search Bib</Button>
+        <Button name="searchImages" @click="searchImages"  class="p-button-secondary ">
+          <i class="pi pi-search"></i>
+        </Button>
       </div>                     
     </form>
+    
     <div v-if="bibSelection && raceId" class="w-full text-lg ">
       BIB: {{bibSelection}} {{bibData.Name}}
       <small class="text-right">{{message}}</small>
     </div>
+    <div v-if="raceId && races.find(x=>x.id==raceId)?.photoStatus.includes('face')" > 
+      <hr/>
+      <FileUpload mode="basic" name="demo[]"  accept="image/*" customUpload @uploader="faceUploader" 
+      class="w-full my-10"
+        :maxFileSize="10000000" :auto="true" chooseLabel="Upload cropped face image 👤" />
+    </div>
+
+  
     <div class="flex flex-wrap bg-gray-200 w-full justify-evenly">
       <!-- <ImageCard v-for="img in images" v-bind:raceId="raceId" v-bind:bibNo="bibNo" v-bind:imagePath="img.imagePath"/> -->
       <!-- <div class="flex-auto bg-teal-400 p-4 m-2">1</div>   -->
@@ -28,15 +42,17 @@
       </div>
       <!-- v-bind:imagePath="img.imagePath" -->
     </div>
-    <div class="w-full text-center justify-center flex-col"
-    v-if="images.length && bibNo && raceId" >
-      {{images.length}} images found.  NOTE: You can search for 3 digit part of the bib number too.
-    </div>    
 
+    <div class="container py-10 px-10 mx-0 min-w-full flex flex-col items-center">
+      <Button label="Primary" rounded class="p-button-rounded p-button-raised"><i class="pi pi-search-plus" v-if="allImages.length>images.length" @click="minDist++"></i></Button>
+      <div class="w-full text-center justify-center flex-col"
+        v-if="images.length && (bibNo || uploadedImage) && raceId" >
+        {{images.length}} images found.  <span style="font-size:.3em;">{{ minDist }}</span><br/>
+        <small>NOTE: You can search for 3 digit part of the bib number too.</small>
+      </div>  
+    </div>  
 
   </div>
-  
-      
 
   <Dialog v-model:visible="visible" maximizable modal 
     v-bind:header="dialogHeader" >
@@ -83,12 +99,17 @@ import Dropdown from 'primevue/dropdown';
 import Image from 'primevue/image';
 import Dialog from 'primevue/dialog';
 import AutoComplete from 'primevue/autocomplete';
+import FileUpload from 'primevue/fileupload'
 // import Galleria from 'primevue/galleria';
 import { useRoute } from 'vue-router';
 import { computed, ref } from 'vue';
 import { ref as storageRef, getDownloadURL } from "firebase/storage";
+// const { config } = require( "../config")
+import {config} from "../config"
 import { collection, getDocs,doc, query, where, limit, onSnapshot } from "firebase/firestore"; //ref as dbRef,
-
+import { uploadFiletoGCS } from "../helpers/file-uploader"
+import axios from 'axios';
+import Compressor from 'compressorjs';
 import { db, storage } from "../../firebase/config" 
 const store = useStore()
 store.dispatch('getRacesAction')
@@ -111,23 +132,33 @@ if (route.params.bib)
   bibSelection.value=route.params.bib
 const message = ref("")
 let filteredBibObjects=ref([])
+
 let bibData = computed(()=>{
   let filt=filteredBibObjects.value.filter(x=>x.Bib==bibSelection.value)
   return filt.length? filt[0] : []})
 
+const uploadedImage = ref('')
 const items = ref([]);
-const images = ref([])
+const allImages = ref([])
+const images = computed(() => allImages.value.filter(x=> {
+    let ret= ((x.dist || 0) <= minDist.value/100);
+    return ret})
+)// old ref([])
+const minDist = ref(40);
 let bibNo=computed(()=>bibSelection.value.split(" ")[0])
 // const getFirstPart = function(bibstr) { return "x"+bibstr.split(/\t\ /)[0]}
 
-// const q = query(collection(raceImagesCol, ));
+/**
+ * Dropdown for the Bib
+ * @param {*} event 
+ */
 const searchBib = async (event) => {
   // exit if raceId is not selected
   if (!raceId.value) return;
   var raceBibsCol=collection(db, "races", raceId.value, "bibs" ); 
-  images.value=[]
+  allImages.value=[]
   let n=10,
-    _items = [];
+  _items = [];
   let searchField=isNaN(event.query) ? 
                'Name' :'Bib' ;
   let qryString = isNaN(event.query) ? 
@@ -158,40 +189,128 @@ const searchBib = async (event) => {
   message.value="..."
 }
 
+/**
+ * search Images
+ */
 const searchImages = async () => {
   let bibNo=bibSelection.value.split(" ")[0],
-      containsOperator="array-contains",
-    _items = [];
-  if (!raceId.value){
-    message.value=`Select race `
-    return []
-  } else if (bibNo.toUpperCase()=='MISSING'){
-    bibNo=[]
-    containsOperator='=='
-  }
-  message.value=`Searching photos for ${bibSelection.value} `
-  console.log(bibSelection.value)
-  
-  var raceImagesCol=collection(db, "races", raceId.value, "images" ); //  
-  let querySnapshot = await getDocs(
-        query(raceImagesCol,
-          where('texts',containsOperator,bibNo),
-          limit(LIMIT_PICS)
-        ));
-  if(querySnapshot.docs.length){
-    for (let i=0;i<querySnapshot.docs.length;i++) {
-      let data = querySnapshot.docs[i].data()
+        containsOperator="array-contains",
+        _items = [];
 
-      if (!(data.status && data.status=="hidden"))
-        _items.push(data);
-    };  
+  if (uploadedImage.value) {
+    message.value=`Searching photos for ${uploadedImage.value} `
+    console.log(uploadedImage.value)
+    
+    let raceImagesCol=collection(db, "facesearch", raceId.value, "uploads" , uploadedImage.value ,"matches"); //  
+    let querySnapshot = await getDocs(
+          query(raceImagesCol,
+            //need confidence where('texts',containsOperator,bibNo),
+            limit(LIMIT_PICS)
+          ));
 
-    images.value=_items ;
+    if(querySnapshot.docs.length){
+      let data = querySnapshot.docs.map(x=>x.data())
+      
+      allImages.value=data
+                        .map(mapFaceMatchRet)
+                        .sort((a,b)=>(a.dist<b.dist)) ;
+    }
+    message.value=`Found photos for uploaded face`
+    return _items
+
+  } else {
+
+    if (!raceId.value){
+      message.value=`Select race `
+      return []
+    } else if (bibNo.toUpperCase()=='MISSING'){
+      bibNo=[]
+      containsOperator='=='
+    }
+
+    message.value=`Searching photos for ${bibSelection.value} `
+    console.log(bibSelection.value)
+    
+    let raceImagesCol=collection(db, "races", raceId.value, "images" ); //  
+    let querySnapshot = await getDocs(
+          query(raceImagesCol,
+            where('texts',containsOperator,bibNo),
+            limit(LIMIT_PICS)
+          ));
+    if(querySnapshot.docs.length){
+      for (let i=0;i<querySnapshot.docs.length;i++) {
+        let data = querySnapshot.docs[i].data()
+
+        if (!(data.status && data.status=="hidden"))
+          _items.push(data);
+      };  
+
+      allImages.value=_items ;
+    }
+    message.value=`Found ${allImages.value.length} photos for ${bibNo} `
+    return _items
   }
-  message.value=`Found ${images.value.length} photos for ${bibNo} `
-  return _items
+}
+
+function mapFaceMatchRet(d){
+  // need imagePath...could get metadata
+  return {
+    imagePath:d.file,
+    score:d.score,
+    dist:d.dist,
+  }
 }
   
+/**
+ * 
+ * @param {*} x: unused 
+ */
+///local url was 60d28877-c93f-481b-9c3d-5caddf532ee0"
+let faceUploader=async (x)=>{
+
+  let uploadImage=x.files[0]
+  let fileId =   [ encodeURIComponent(uploadImage.name.split('/').pop()),uploadImage.lastModified,uploadImage.size].join("~")
+
+  let uploadPath = `${config.storage.faceUploads}/${raceId.value}/${fileId}`
+
+  // let response = await uploadFiletoGCS(uploadPath, uploadImage);
+  new Compressor(uploadImage, {
+    quality: 0.6,
+
+    // The compression process is asynchronous,
+    // which means you have to access the `result` in the `success` hook function.
+    success(result) {
+      const formData = new FormData();
+
+      // The third parameter is required for server
+      formData.append('event',raceId.value)
+      formData.append('imageFile', fileId)
+      formData.append('image', uploadImage, uploadImage.name);
+
+  //     // Send the compressed image file to server with XMLHttpRequest.
+      axios.post(config.api.faceMatchUpload+'/image', formData)
+      .then((ret) => {
+        console.log('Upload success',ret);
+    
+        allImages.value=ret.data
+                          .map(mapFaceMatchRet)
+                          .sort((a,b)=>(a.dist<b.dist)) ;        
+      })
+      .catch(e=>{
+        console.warn(e)
+      });
+    },
+    error(err) {
+      console.log(err.message);
+    },
+  });
+
+  uploadedImage.value = fileId
+  message.value = `${fileId} Uploaded`
+  // searchImages()
+
+  return fileId // this will get updated in firestore
+}
 let klick=() => { 
   debugger;
 }
@@ -210,7 +329,7 @@ function toggleDialog  (i){
   if (entryToEdit) {
     entryToEdit.value=i
     visible.value=true
-    diaTexts.value=(images.value[i] && images.value[i].texts) ? images.value[i].texts.join(',') : ''
+    diaTexts.value=(images?.value[i]?.texts) ? images.value[i].texts.join(',') : ''
   } else{
     entryToEdit.value=false
     visible.value=false

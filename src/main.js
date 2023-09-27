@@ -14,7 +14,9 @@ import VueGtag from "vue-gtag-next";
 import VueSocialSharing from 'vue-social-sharing'
 // import vue3GoogleLogin from 'vue3-google-login'
 
+
 const app = createApp(App)
+app.config.devtools = true
 
 app.use(store)
     .use(VueGtag, {
