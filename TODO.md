@@ -13,6 +13,10 @@
 * photoStatus==available UI 
 * timestamp from server
 * Logic to add timing entry: need lot of work
+* watch the queue traffic
+* rename API as /image as /api/facematch
+* search for all images (in case of seach image has all face. current solution any faces)
+
 
 ### current 
 * defect: merge two fields 'user' for start else 'userId'
@@ -24,6 +28,22 @@
     * event logos
 
 ### features
+* **28sep**
+    * face search
+        * service that wakes up for performance
+        * direct fetch (earlier option storage update->pubsub->eventarc->function)
+        * find more images button (maxDist)
+        * compress images before upload
+        * progress bar
+        * test scripts
+        * racelist sorted
+        * photoStatus to have: available, face, faceonly
+        * JOB API: getdescriptors /api/eventscan
+        * JOB API: cluster /api/eventcluster   
+    * revamped race page race create me
+        * cards vs data table
+        * create new race button
+        * races sorted desc
 * **14May**
     * several WIP change for race management
     * function generated page has ext .png.jpg instead of .jpg
