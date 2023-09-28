@@ -1,17 +1,25 @@
 <script setup>
 import { useStore } from 'vuex';
 import { useRouter, useLink } from 'vue-router'
-
+import Card from 'primevue/card' ;
 import { computed,ref } from 'vue';
 import {getDateTime} from '../helpers';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputSwitch from 'primevue/inputswitch';
+import {db} from '../../firebase/config'
+import TabView from 'primevue/tabview';
+import TabPanel from 'primevue/tabpanel';
+import InputText from 'primevue/inputtext';
+import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
+
 const store = useStore()
 const router = useRouter()
 
+const newRaceId=ref('newrace23month')
 const races = computed(() => {let arr = store.state.datastore.races
                               if (arr instanceof Object) 
+                                arr=arr.sort((a,b)=>a.Date<b.Date)
                                 if (nolist.value ){
                                   return arr
                                 } else {
@@ -21,7 +29,23 @@ const races = computed(() => {let arr = store.state.datastore.races
 
 store.dispatch('getRacesAction')
 
-import { db } from '../../firebase/config';
+function createNewRace(){
+  // debugger;
+  if(newRaceId.value){
+    let newRace=newRaceId.value.trim()
+    getDoc(doc(db,'races/mychoice23sep'))
+      .then(snap=>{
+        let data=snap.data();
+        data.id = newRace;
+        data.photoStatus="available"
+        data.status=[]
+        setDoc(doc(db,`races/${newRace}`),data)
+          .then(x=>
+            console.log(`Created race ${newRace}`)
+          )
+      }) 
+  }
+}
 
 let fsdb={races:[]}
 
@@ -48,37 +72,69 @@ NOP(fsdb);
     <div class="w-full text-center justify-center flex-col">
       <div id="header flex">
         <h1 @dblclick="klick" class="text-xl text-center">Races</h1> 
-        <InputSwitch v-model="nolist"/>
       </div>
-      <DataTable :value="races">
-          <!-- <Column v-for="col of races[0]" :field="col.field" :header="col.header" :key="col.field"></Column> -->
-          <!-- <Column field="id" header="Id"></Column> -->
-          <Column field="Date" header="Date"></Column>
-          <Column field="Name" header="Race"></Column>
-          <!-- <Column field="Location" header="Location"></Column> -->
-          <!-- <Column >
-                    <template #body="slotProps">
-                        <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editProduct(slotProps.data)" />
-                        <Button icon="pi pi-trash" class="p-button-rounded p-button-warning" @click="confirmDeleteProduct(slotProps.data)" />
-                    </template>          
-            <Button>@click="$router.push(`race/${r.id}`)">Go</Button>
-          </Column>  -->
-          <Column>
-            <template #body="slotProps">
-              <!-- <router-link :to="slotProps.data.id" class="text-primary mr-2 hover:text-[#FF9000] transition ease-in-out">
-                Goto
-              </router-link> -->
-              <Button type="button" :label="slotProps.data.id" 
-                @click="router.push(`/e/${slotProps.data.id}`)"
-                class="p-button-raised p-button-secondary"></Button>
-              <Button type="button" @click="router.push(`/e/${slotProps.data.id}`)"
-                class="p-button-raised p-button-secondary">Record</Button>
-              <Button type="button" @click="router.push(`/e/${slotProps.data.id}/i`)"
-                class="p-button-raised p-button-secondary">Images</Button>
-            </template>
-          </Column>
-      </DataTable>
-     
-    </div>
+
+      <Card v-for="r in races" style="border: 1em" class="mx-auto">
+        <template #header>
+            <!-- <img alt="" src="/images/usercard.png" /> -->
+            {{ r.id }}
+        </template>
+        <template #title> {{r.Name}} </template>
+        <template #subtitle> {{r.Date}} </template>
+        <template #content>
+            <ul>
+                <li>Location: {{ r.Location }}</li>
+            </ul>
+        </template>
+        <template #footer>
+          <div class="w-full flex gap-3 mx-auto">
+            <Button type="button" label="Edit" icon="pi pi-pencil" raised
+              @click="router.push(`/e/${r.id}`)" ></Button>
+            <Button type="button" @click="router.push(`/e/${r.id}`)" icon="pi pi-times"
+              label="Record"></Button>
+            <Button type="button" @click="router.push(`/e/${r.id}/i`)" icon="pi pi-check" 
+              label="Images"></Button>
+
+          </div>
+        </template>
+    </Card>
+  </div>
+
+    <TabView>
+      <TabPanel header="Process">
+          <InputSwitch v-model="nolist"/> 
+          <p>
+            Mark old races as "nolist"
+          </p>
+      </TabPanel>
+      <TabPanel header="Create">
+          <p>
+            <div class="flex flex-column gap-2">
+                <label for="newRaceId">Race Id</label>
+                <InputText id="newRaceId" v-model="newRaceId" aria-describedby="raceId-help" />
+                <Button type="button" @click="createNewRace"
+                  label="Create"></Button>
+            </div>
+            <small id="username-help">Enter your id for the Race.  Only a-z0-9. All lowercase. No space </small>
+                
+          </p>
+      </TabPanel>
+      <TabPanel header="Record">
+          <p>
+            <ol>
+              <li>Edit the information of the race</li>
+              <li>Start the race</li>
+              <li>Record the timing</li>
+              <li>Close the races</li>
+              <li>Finalize the results</li>
+              <li>Upload Photos</li>
+              <li>Publish the Photos link</li>
+            </ol>   
+            
+          </p>
+      </TabPanel>
+  </TabView>
+
+
   </div>
 </template>

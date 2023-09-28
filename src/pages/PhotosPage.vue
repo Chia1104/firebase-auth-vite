@@ -3,10 +3,11 @@
   
   <div class="container mx-auto gap-3">
     <h1 @dblclick="klick()">Photos</h1>
+    
     <form @submit="searchImages" class="gap-2">
       <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
                         placeholder="Select a race" class="md:w-14rem w-full" />   
-      <div class="card flex justify-content-center w-full">
+      <div class="card flex justify-content-center w-full" v-if="!races.find(x=>x.id==raceId)?.photoStatus.includes('faceonly')">
         <Button @click="bibSelection='';allImages=[];uploadedImage=''" class="p-button-secondary" >
           <i class="pi pi-times"></i>
         </Button>
@@ -23,7 +24,7 @@
       BIB: {{bibSelection}} {{bibData.Name}}
       <small class="text-right">{{message}}</small>
     </div>
-    <div v-if="raceId && races.find(x=>x.id==raceId)?.photoStatus.includes('face')" > 
+    <div v-if="!bibSelection && raceId && races.find(x=>x.id==raceId)?.photoStatus.includes('face')" > 
       <hr/>
       <FileUpload mode="basic" name="demo[]"  accept="image/*" customUpload @uploader="faceUploader" 
       class="w-full my-10"
@@ -43,10 +44,15 @@
       <!-- v-bind:imagePath="img.imagePath" -->
     </div>
 
-    <div class="container py-10 px-10 mx-0 min-w-full flex flex-col items-center">
-      <Button label="Primary" rounded class="p-button-rounded p-button-raised"><i class="pi pi-search-plus" v-if="allImages.length>images.length" @click="minDist++"></i></Button>
+    <div class="container py-10 px-10 mx-0 min-w-full flex flex-col items-center" v-if="raceId" >
+
+      <ProgressSpinner v-if="uploadedImage && !allImages.length"/>
+
+      <Button rounded class="p-button-rounded p-button-raised" v-if=" uploadedImage && (allImages.length>images.length)" 
+        @click="getMorePhotos()">
+        <i class="pi pi-search-plus" ></i></Button>
       <div class="w-full text-center justify-center flex-col"
-        v-if="images.length && (bibNo || uploadedImage) && raceId" >
+        v-if="images.length && (bibNo || uploadedImage)" >
         {{images.length}} images found.  <span style="font-size:.3em;">{{ minDist }}</span><br/>
         <small>NOTE: You can search for 3 digit part of the bib number too.</small>
       </div>  
@@ -99,28 +105,33 @@ import Dropdown from 'primevue/dropdown';
 import Image from 'primevue/image';
 import Dialog from 'primevue/dialog';
 import AutoComplete from 'primevue/autocomplete';
+import ProgressSpinner from 'primevue/progressspinner';
 import FileUpload from 'primevue/fileupload'
 // import Galleria from 'primevue/galleria';
 import { useRoute } from 'vue-router';
 import { computed, ref } from 'vue';
 import { ref as storageRef, getDownloadURL } from "firebase/storage";
-// const { config } = require( "../config")
 import {config} from "../config"
 import { collection, getDocs,doc, query, where, limit, onSnapshot } from "firebase/firestore"; //ref as dbRef,
 import { uploadFiletoGCS } from "../helpers/file-uploader"
 import axios from 'axios';
 import Compressor from 'compressorjs';
 import { db, storage } from "../../firebase/config" 
+
+// wakesup the backend
+fetch(config.api.faceMatchUpload+'/api/faceapi',{headers: {mode: "cors", "Referer": "https://runpix.web.app" }}) //call the fetch function passing the url of the API as a parameter
+.then(function(x) {console.log(`/api/faceapi: Status: ${x.status}`)})
+.catch(function(e) {console.error(e) });
+
 const store = useStore()
 store.dispatch('getRacesAction')
 
-const LIMIT_PICS=5000
 const route = useRoute();  
 
-
 const races =  computed(() => 
-    store.state.datastore.races.filter(r=>
-        (r.photoStatus && (r.photoStatus.indexOf("available")>=0) )));
+    store.state.datastore.races
+    .sort((a,b)=>a.Date>b.Date)
+    .filter(r=>(r.photoStatus && (r.photoStatus.indexOf("available")>=0) )));
   
 let raceId = ref("")
 if(route.params.raceId){
@@ -140,11 +151,12 @@ let bibData = computed(()=>{
 const uploadedImage = ref('')
 const items = ref([]);
 const allImages = ref([])
-const images = computed(() => allImages.value.filter(x=> {
-    let ret= ((x.dist || 0) <= minDist.value/100);
+const images = computed(() => allImages.value.filter((x,i)=> {
+    let ret= ((i<3) || (x.dist || 0) <= minDist.value/100);
     return ret})
 )// old ref([])
-const minDist = ref(40);
+const searchInProgress=ref(false)
+const minDist = ref(config.face.minDistx100);
 let bibNo=computed(()=>bibSelection.value.split(" ")[0])
 // const getFirstPart = function(bibstr) { return "x"+bibstr.split(/\t\ /)[0]}
 
@@ -205,7 +217,7 @@ const searchImages = async () => {
     let querySnapshot = await getDocs(
           query(raceImagesCol,
             //need confidence where('texts',containsOperator,bibNo),
-            limit(LIMIT_PICS)
+            limit(config.images.limit_pics)
           ));
 
     if(querySnapshot.docs.length){
@@ -213,7 +225,7 @@ const searchImages = async () => {
       
       allImages.value=data
                         .map(mapFaceMatchRet)
-                        .sort((a,b)=>(a.dist<b.dist)) ;
+                        .sort((a,b)=>(a.dist>b.dist)) ;
     }
     message.value=`Found photos for uploaded face`
     return _items
@@ -271,12 +283,16 @@ let faceUploader=async (x)=>{
   let uploadImage=x.files[0]
   let fileId =   [ encodeURIComponent(uploadImage.name.split('/').pop()),uploadImage.lastModified,uploadImage.size].join("~")
 
-  let uploadPath = `${config.storage.faceUploads}/${raceId.value}/${fileId}`
-
+  // let uploadPath = `${config.storage.faceUploads}/${raceId.value}/${fileId}`
   // let response = await uploadFiletoGCS(uploadPath, uploadImage);
+  allImages.value=[];
+  minDist.value=config.face.minDistx100;
+  searchInProgress.value=true
+
   new Compressor(uploadImage, {
     quality: 0.6,
-
+    maxHeight: 2048,
+    maxWidth: 2048,
     // The compression process is asynchronous,
     // which means you have to access the `result` in the `success` hook function.
     success(result) {
@@ -294,7 +310,8 @@ let faceUploader=async (x)=>{
     
         allImages.value=ret.data
                           .map(mapFaceMatchRet)
-                          .sort((a,b)=>(a.dist<b.dist)) ;        
+                          .sort((a,b)=>(a.dist>b.dist)) ;        
+        searchInProgress.value=false
       })
       .catch(e=>{
         console.warn(e)
@@ -348,6 +365,15 @@ function copyUrl(url) {
   url = url || shareableUrl.value
   navigator.clipboard.writeText(url)
   alert(`URL copied to clipboard\n\n${url}`)
+}
+
+function getMorePhotos(){
+  // debugger;
+  let maxDistAmongDisplayedPics = Math.max(...images.value.map(x=>x.dist))
+  minDist.value=parseInt(
+      Math.max(minDist.value+2, 
+               Math.min(...allImages.value.map(x=>x.dist).filter(x=>x>maxDistAmongDisplayedPics))*100))+1;
+  
 }
 </script>
 
