@@ -1,7 +1,7 @@
 <template >
   <router-link :to="'/e/'+raceId" class="text-xl">
       <!-- <Button name="races" >Race</Button> -->
-      🔙
+      <Button raised icon="pi pi-chevron-left" class="p-2"/> 
   </router-link>
   <Button :label="upload?'Image review':'Bulk Upload'"  @click="upload=!upload" />
 
@@ -9,7 +9,6 @@
     :raceId="raceId"/>
   <!-- :waypoint="waypoint"  -->
   <div v-else>
-
     <div class="flex align-items-center">
         <label for="showHidden" class="ml-2">Show All</label>
         <Checkbox v-model="showHidden" inputId="showHidden"  value="showHidden" />
@@ -17,6 +16,7 @@
       <Dropdown v-model="numTexts" inputId="numTexts"  :options="numTextsOptions" multiple/>
       <!-- {{numTexts}} -->
     </div>
+
     <Paginator v-model:first="first" v-model:rows="rows" :totalRecords="images.length" template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
       currentPageReportTemplate="{first}-{last} of {totalRecords}" />
     <div class="flex flex-wrap bg-gray-200 justify-evenly">    
@@ -69,6 +69,7 @@
         <a label="Prev" icon="pi pi-chevron-left" @click="entryToEdit--" text />
         <a label="Next" icon="pi pi-chevron-right" @click="entryToEdit++" text />
         <InputText v-model="diaTexts" separator=","  />
+        <Button label="Make Cover Image" icon="pi pi-bookmark" @click="setCoverPage();visible = false" text />
         <Button label="No" icon="pi pi-times" @click="visible = false" text />
         <Button label="Save" @click="submitChange();visible = false" icon="pi pi-check" autofocus />
     </template>
@@ -76,7 +77,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, ref, onMounted, reactive } from 'vue'
+import { computed, ref, onMounted, reactive } from 'vue'
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router'
 import Paginator from 'primevue/paginator';
@@ -86,7 +87,7 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import Checkbox from 'primevue/checkbox';
-import { getDocData } from "../api" 
+import { getDocData , getPublicUrl} from "../api" 
 import { db, storage } from "../../firebase/config" 
 // import { ref as dbRef, getDownloadURL } from "firebase/storage";
 import { collection,query,doc, onSnapshot, updateDoc,getDocs } from "firebase/firestore";
@@ -176,7 +177,14 @@ function submitChange(e){
   
 }
 
-function getPublicUrl (folder,raceId,file) {return `https://storage.googleapis.com/run-pix.appspot.com/${folder}/${raceId}/${file.replace(/.png/i,'.jpg')}`}
+function setCoverPage(e){
+  let imagePath=images.value[entryToEdit.value].imagePath
+  console.debug(entryToEdit,imagePath)
+  return updateDoc(doc(db,`races/${raceId}`),{coverPage:imagePath}) 
+  
+  
+}
+
 const shareableUrl = computed(() => `https://run-pix.web.app/image/${btoa([props.raceId,props.bibNo,imagePath].join('/'))}`)
 const imageData = ref({})
 
