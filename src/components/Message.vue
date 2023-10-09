@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps } from 'vue'
+
 import Message from 'primevue/message';
 
 defineProps({

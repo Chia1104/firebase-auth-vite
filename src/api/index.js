@@ -145,3 +145,10 @@ export const  getDocData = async (path) => {
             return {}
         }) 
 }
+
+export const  getPublicUrl = (folder,raceId,file) =>{
+    if (file){
+        let filename=file.replace(/.png/i,'.jpg')
+        return `https://storage.googleapis.com/run-pix.appspot.com/${folder}/${raceId}/${filename}`
+    }
+}

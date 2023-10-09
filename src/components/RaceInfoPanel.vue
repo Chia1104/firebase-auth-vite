@@ -71,7 +71,7 @@ import Chips from 'primevue/chips'
 import ToggleButton from 'primevue/togglebutton';
 import Dropdown from 'primevue/dropdown';
 import { useStore } from 'vuex';
-import { computed, defineProps ,ref, reactive } from 'vue';
+import { computed ,ref, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
 import {db} from '../../firebase/config'

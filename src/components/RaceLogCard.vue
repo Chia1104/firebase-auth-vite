@@ -93,7 +93,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useStore } from 'vuex';
 
 import Paginator from 'primevue/paginator';

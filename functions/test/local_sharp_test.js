@@ -8,17 +8,13 @@ const { assert } = require('chai');
 describe("IMG: Image format conversion",function (){
     // let res=[]
     this.timeout(2000); // A very long environment setup.
-    // setTimeout(done, 2500);
+
     let path='/m/runpix/functions/test/master/images'
     let files=[];
     
     before('test_all()',async ()=>{
-        // console.log("before")
-        // test_all().then(x=>{
-        //     console.log("zzzzzzzzzzzz")
-        //     res=x
-        //     done()
-        // })
+
+        
         files=fs.readdirSync(path)
         it('files found for testing', function (){
             assert.isAtLeast(files.length,1)
@@ -43,12 +39,12 @@ describe("IMG: Image format conversion",function (){
       });
 
     describe('IMG size Check',()=>{
-        let file='/temp/20230326_080946.jpg'//'2023-04-01T12 21 36.426Z~venue~avinashmane$gmail.com~20230401_175132.jpg'
+        let file='test/data/2023-07-09T06 33 56.012Z~VENUE~jparagj$gmail.com~1P6A7976.jpg'
         let size=fs.statSync(file).size
         for (let quality of [20,30,40,60,70,80,90])
             for (let scale of [.1,.2,.3,.4,.5,.6,.7,.8,.9]) 
                 for (let progressive of [true,false]) {
-                    let outfile=`/temp/out/out_${scale*100}x_${progressive?"P":"X"}_${quality}.jpg`
+                    let outfile=`test/out/out_${scale*100}x_${progressive?"P":"X"}_${quality}.jpg`
                     it(`S:${scale} ${progressive} Q:${quality}`,function (done) {
                         resizeImage(file,scale,quality,progressive,
                             outfile)
@@ -67,13 +63,13 @@ describe("IMG: Image format conversion",function (){
 });
 
 describe('IMG quality Check',()=>{
-    let file='/temp/20230326_080946.jpg'//'2023-04-01T12 21 36.426Z~venue~avinashmane$gmail.com~20230401_175132.jpg'
+    let file='test/data/2023-07-09T06 33 56.012Z~VENUE~jparagj$gmail.com~1P6A7976.jpg'
     let size=fs.statSync(file).size
     scale=[.5,.75,1.25,1.5]
 
     for (let param of ['brightness','lightness','contrast','saturation'])
         for (let s of scale)  {
-                let outfile=`/temp/out/out_${param}_${s*100}.jpg`
+                let outfile=`test/out/out_${param}_${s*100}.jpg`
                 it(outfile,function (done) {
                     modulateImage(file,param,s,
                         outfile)

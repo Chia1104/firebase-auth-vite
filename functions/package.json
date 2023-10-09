@@ -17,7 +17,7 @@
     "sharp": "^0.31.3"
   },
   "devDependencies": {
-    "chai": "^4.3.7",
+    "chai": "^4.3.10",
     "eslint": "^6.8.0",
     "eslint-plugin-promise": "^4.3.1",
     "firebase-functions-test": "^3.0.0",
@@ -27,7 +27,7 @@
     "lint": "./node_modules/.bin/eslint --max-warnings=0 .",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
-    "test": "mocha --reporter spec",
+    "test": "npx mocha --reporter spec",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",

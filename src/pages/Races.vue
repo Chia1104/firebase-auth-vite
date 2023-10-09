@@ -12,6 +12,7 @@ import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import InputText from 'primevue/inputtext';
 import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
+import { getPublicUrl} from "../api" 
 
 const store = useStore()
 const router = useRouter()
@@ -32,16 +33,17 @@ store.dispatch('getRacesAction')
 function createNewRace(){
   // debugger;
   if(newRaceId.value){
-    let newRace=newRaceId.value.trim()
-    getDoc(doc(db,'races/mychoice23sep'))
+    let newRace=newRaceId.value.replace(/[^0-9A-z]*/g,"").toLowerCase()
+    getDoc(doc(db,'races/default'))
       .then(snap=>{
         let data=snap.data();
         data.id = newRace;
+        data.name=newRaceId.value;  
         data.photoStatus="available"
         data.status=[]
         setDoc(doc(db,`races/${newRace}`),data)
           .then(x=>
-            console.log(`Created race ${newRace}`)
+            console.log(`Created race with id ${newRace}`)
           )
       }) 
   }
@@ -74,31 +76,57 @@ NOP(fsdb);
         <h1 @dblclick="klick" class="text-xl text-center">Races</h1> 
       </div>
 
-      <Card v-for="r in races" style="border: 1em" class="mx-auto">
-        <template #header>
-            <!-- <img alt="" src="/images/usercard.png" /> -->
-            {{ r.id }}
-        </template>
-        <template #title> {{r.Name}} </template>
-        <template #subtitle> {{r.Date}} </template>
-        <template #content>
-            <ul>
-                <li>Location: {{ r.Location }}</li>
-            </ul>
-        </template>
-        <template #footer>
-          <div class="w-full flex gap-3 mx-auto">
-            <Button type="button" label="Edit" icon="pi pi-pencil" raised
-              @click="router.push(`/e/${r.id}`)" ></Button>
-            <Button type="button" @click="router.push(`/e/${r.id}`)" icon="pi pi-times"
-              label="Record"></Button>
-            <Button type="button" @click="router.push(`/e/${r.id}/i`)" icon="pi pi-check" 
-              label="Images"></Button>
+      <div class="card">
+        <DataTable :value="races"  stripedRows>
+            <Column field="id">       
+              <template #body="{ data }">         
+                <img class="w-20 rounded-full drop-shadow object-cover aspect-square"
+                  :src="getPublicUrl('thumbs',data?.id,data?.coverPage)"/>  
+              </template>
+            </Column>
+            <Column field="Name" header="Name" sortable>
+              <template #body="{ data }">
+                <div class="container">                
+                <small>
+                {{data.id}}</small>
+                <div>{{data.Name}}</div>
+                </div>
+              </template>
+            </Column>
+            <Column field="Date" header="Date Location" sortable>
+              <template #body="{ data }">
+                <div class="flex flex-row  ">
+                <Button @click="router.push(`/e/${data.id}`)" icon="pi pi-flag" raised />
+                <span class="text-sm">
+                  <div>{{ data.Date }}</div>
+                  <div>{{data.Location}}</div>
+                </span>
+              </div>
+              </template>
+            </Column>
+            <!-- <Column field="Location" header="Location" sortable></Column> -->
+        </DataTable>
+      </div>      
+      <!-- <DataTable> -->
+        <!-- <tr v-for="r in races" class="w-full flex gap-3 mx-auto">
+          <td>
+          {{r.Name}}
+          <Button type="button" label="View" icon="pi pi-bookmark" 
+            @click="router.push(`/e/${r.id}`)" raised>
+          </Button>
+          </td>
+            <td> {{r.Date}} </td>
+            <td> {{ r.Location }}</td>
+             -->
 
-          </div>
-        </template>
-    </Card>
-  </div>
+          <!-- <Button type="button" @click="router.push(`/e/${r.id}/e`)" icon="pi pi-pencil"
+            label="Edit"  raised></Button>
+          <Button type="button" @click="router.push(`/e/${r.id}/i`)" icon="pi pi-images" 
+            label="Images"  raised></Button> -->
+
+        <!-- </tr>
+      </DataTable>         -->
+    </div>
 
     <TabView>
       <TabPanel header="Process">

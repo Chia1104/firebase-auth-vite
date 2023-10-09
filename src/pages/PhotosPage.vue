@@ -4,17 +4,17 @@
   <div class="container mx-auto gap-3">
     <h1 @dblclick="klick()">Photos</h1>
     
-    <form @submit="searchImages" class="gap-2">
+    <form @submit="searchImages" class="gap-2 mx-2">
       <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
                         placeholder="Select a race" class="md:w-14rem w-full" />   
-      <div class="card flex justify-content-center w-full" v-if="!races.find(x=>x.id==raceId)?.photoStatus.includes('faceonly')">
-        <Button @click="bibSelection='';allImages=[];uploadedImage=''" class="p-button-secondary" >
+      <div class="card flex justify-content-center w-full  py-1" v-if="!races.find(x=>x.id==raceId)?.photoStatus.includes('faceonly')">
+        <Button @click="bibSelection='';allImages=[];uploadedImage=''" class="p-button-primary" raised >
           <i class="pi pi-times"></i>
         </Button>
         <AutoComplete id="searchBib" v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib"  placeholder="Enter your BIB number"
           :dropdown-click="searchBib" class="w-full" />
           <!-- <AutoComplete v-model="selectedItem" :suggestions="filteredItems" @complete="searchItems" :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="label" dropdown /> -->
-        <Button name="searchImages" @click="searchImages"  class="p-button-secondary ">
+        <Button name="searchImages" @click="searchImages"  class="p-button-secondary " raised>
           <i class="pi pi-search"></i>
         </Button>
       </div>                     
@@ -27,7 +27,7 @@
     <div v-if="!bibSelection && raceId && races.find(x=>x.id==raceId)?.photoStatus.includes('face')" > 
       <hr/>
       <FileUpload mode="basic" name="demo[]"  accept="image/*" customUpload @uploader="faceUploader" 
-      class="w-full my-10"
+      class="w-full "
         :maxFileSize="10000000" :auto="true" chooseLabel="Upload cropped face image 👤" />
     </div>
 
@@ -46,7 +46,8 @@
 
     <div class="container py-10 px-10 mx-0 min-w-full flex flex-col items-center" v-if="raceId" >
 
-      <ProgressSpinner v-if="uploadedImage && !allImages.length"/>
+      <ProgressSpinner v-if="searchInProgress"/> 
+      <!-- uploadedImage && !allImages.length -->
 
       <Button rounded class="p-button-rounded p-button-raised" v-if=" uploadedImage && (allImages.length>images.length)" 
         @click="getMorePhotos()">
@@ -107,7 +108,7 @@ import Dialog from 'primevue/dialog';
 import AutoComplete from 'primevue/autocomplete';
 import ProgressSpinner from 'primevue/progressspinner';
 import FileUpload from 'primevue/fileupload'
-// import Galleria from 'primevue/galleria';
+import Button from 'primevue/button';
 import { useRoute } from 'vue-router';
 import { computed, ref } from 'vue';
 import { ref as storageRef, getDownloadURL } from "firebase/storage";
@@ -130,8 +131,9 @@ const route = useRoute();
 
 const races =  computed(() => 
     store.state.datastore.races
-    .sort((a,b)=>a.Date>b.Date)
-    .filter(r=>(r.photoStatus && (r.photoStatus.indexOf("available")>=0) )));
+    .filter(r=>(r.photoStatus && (r.photoStatus.indexOf("available")>=0) ))
+    .sort((a,b)=>a.Date<b.Date)
+    );
   
 let raceId = ref("")
 if(route.params.raceId){
@@ -211,7 +213,6 @@ const searchImages = async () => {
 
   if (uploadedImage.value) {
     message.value=`Searching photos for ${uploadedImage.value} `
-    console.log(uploadedImage.value)
     
     let raceImagesCol=collection(db, "facesearch", raceId.value, "uploads" , uploadedImage.value ,"matches"); //  
     let querySnapshot = await getDocs(
@@ -247,7 +248,7 @@ const searchImages = async () => {
     let querySnapshot = await getDocs(
           query(raceImagesCol,
             where('texts',containsOperator,bibNo),
-            limit(LIMIT_PICS)
+            limit(config.images.limit_pics)
           ));
     if(querySnapshot.docs.length){
       for (let i=0;i<querySnapshot.docs.length;i++) {
@@ -280,6 +281,10 @@ function mapFaceMatchRet(d){
 ///local url was 60d28877-c93f-481b-9c3d-5caddf532ee0"
 let faceUploader=async (x)=>{
 
+  searchInProgress.value=true
+  message.value=`Searching faces in the uploaded image`
+    
+  
   let uploadImage=x.files[0]
   let fileId =   [ encodeURIComponent(uploadImage.name.split('/').pop()),uploadImage.lastModified,uploadImage.size].join("~")
 
@@ -287,7 +292,7 @@ let faceUploader=async (x)=>{
   // let response = await uploadFiletoGCS(uploadPath, uploadImage);
   allImages.value=[];
   minDist.value=config.face.minDistx100;
-  searchInProgress.value=true
+
 
   new Compressor(uploadImage, {
     quality: 0.6,
@@ -304,18 +309,24 @@ let faceUploader=async (x)=>{
       formData.append('image', uploadImage, uploadImage.name);
 
   //     // Send the compressed image file to server with XMLHttpRequest.
-      axios.post(config.api.faceMatchUpload+'/image', formData)
+      axios.post(config.api.faceMatchUpload+'/api/matchimage', formData)
       .then((ret) => {
         console.log('Upload success',ret);
     
         allImages.value=ret.data
                           .map(mapFaceMatchRet)
                           .sort((a,b)=>(a.dist>b.dist)) ;        
-        searchInProgress.value=false
+        message.value=`Searching faces in the uploaded image`
+        setTimeout(()=>{message.value=''},5000)
       })
       .catch(e=>{
-        console.warn(e)
+        if (e.response.status==422){
+          console.log('No faces found in the uploaded image')
+        } else
+          console.warn(e)
+        uploadedImage.value=null
       });
+      searchInProgress.value=false      
     },
     error(err) {
       console.log(err.message);
@@ -325,9 +336,10 @@ let faceUploader=async (x)=>{
   uploadedImage.value = fileId
   message.value = `${fileId} Uploaded`
   // searchImages()
-
+  searchInProgress.value=false
   return fileId // this will get updated in firestore
 }
+
 let klick=() => { 
   debugger;
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, computed, ref } from 'vue'
+import {  computed, ref } from 'vue'
 import { useToast } from "primevue/usetoast";
 import { db, storage } from "../../firebase/config"
 import { getStorage, ref as dbRef, uploadBytes } from "firebase/storage";

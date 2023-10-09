@@ -166,27 +166,7 @@ describe('Storage_tests', function () {
     })
   });
 
-//   describe('addMessage', () => {
-//     it('should return a 303 redirect', (done) => {
-//       // A fake request object, with req.query.text set to 'input'
-//       const req = { query: {text: 'input'} };
-//       // A fake response object, with a stubbed redirect function which does some assertions
-//       const res = {
-//         redirect: (code, url) => {
-//           // Assert code is 303
-//           assert.equal(code, 303);
-//           // If the database push is successful, then the URL sent back will have the following format:
-//           const expectedRef = new RegExp(projectConfig.databaseURL + '/messages/');
-//           assert.isTrue(expectedRef.test(url));
-//           done();
-//         }
-//       };
 
-//       // Invoke addMessage with our fake request and response objects. This will cause the
-//       // assertions in the response object to be evaluated.
-//       myFunctions.addMessage(req, res);
-//     });
-//   });
 })
 
 function openURI (URI) {

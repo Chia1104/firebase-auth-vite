@@ -26,10 +26,10 @@ const vision = require('@google-cloud/vision');
 const defaultFor= (OPTION,default_)=>{
   let cfg 
   try {
-  if (process.env[OPTION]) 
-    cfg= JSON.parse(process.env[OPTION]) 
-  else
-    cfg= default_
+    if (process.env[OPTION]) 
+      cfg= JSON.parse(process.env[OPTION]) 
+    else
+      cfg= default_
   } catch (e) {debug(e)}
   // console.debug(">>>",OPTION,process.env[OPTION],cfg)
   return cfg
@@ -100,7 +100,10 @@ let watermarks={}; //key="raceId" : watermark sharp image
 let race_cfg={};
 const getRaceCfg= (race) =>  { 
   if (!race_cfg[race])
-    return admin.firestore().doc(`races/${race}`).onSnapshot(snap=>{race_cfg[race]=snap.data();return race_cfg[race] })
+    return admin.firestore().doc(`races/${race}`)
+        .onSnapshot(snap=>{race_cfg[race]=snap.data();
+          return race_cfg[race] 
+        })
   return race_cfg[race]
 }
 
@@ -109,7 +112,7 @@ const getRaceCfg= (race) =>  {
  
  const express = require('express');
  const exphbs = require('express-handlebars');
-const { assert } = require('chai');
+// const { assert } = require('chai');
  const app = express();
 //  const firebaseUser = require('./firebaseUser');
  
@@ -229,8 +232,9 @@ exports.imageUpdate = functions.firestore
       // console.debug(change)
       return {change,context}
     });
-/* ~~~~~~~~~~~~ 5. Storage functions  ~~~~~~~~~~~~~ */
 
+
+/* ~~~~~~~~~~~~ 5. Storage functions  ~~~~~~~~~~~~~ */
 
 /**
  * When an image is uploaded a) check texts Cloud Vision, JPG conv and update in firestores
@@ -271,30 +275,11 @@ exports.ScanImages = functions.runWith({
   }
 
   var [folder, raceId, waypoint, userId, date, gps, fileName] = parseObjName(object.name)
+
   if (raceId=='default')
     debug(object,folder, raceId, waypoint, userId, date, gps,"file", fileName)
 
-
-  let data;
-  // Check the image content using the Cloud Vision API.
-  try {
-    if (RUNTIME_OPTION.ScanImages && !RUNTIME_OPTION.ScanImages.vision) { 
-      log('Skipping vision text detection')
-      data = [{"textAnnotations":[]}]//JSON.parse(fs.readFileSync(testData, 'utf8')) ;
-    } else {
-      const visionClient = new vision.ImageAnnotatorClient();
-      data = await visionClient.textDetection(
-        `gs://${object.bucket}/${object.name}`
-      );
-
-    }
-  } catch (e) {
-    log(`error running computer vision ${testData} ${JSON.stringify(e)}`)
-  }
-  
-  const detections = data[0].textAnnotations;
-  
-
+  const detections = await getAIdetections(object);
 
   // PART II   save images/ref data
   try {
@@ -321,7 +306,8 @@ exports.ScanImages = functions.runWith({
 
           let score = processBounding(d.boundingPoly, getImageHeight(attrs))
 
-          if (NOTIMING_WAYPOINTS.indexOf(waypoint)>=0){
+          // if its not a  non-timing waypoint record timing
+          if (NOTIMING_WAYPOINTS.contains(waypoint)==false){ 
             await updFSReadings(raceId, userId, d.description, 
                       readingDate, score, 
                       waypoint, attrs, imagePath )
@@ -349,6 +335,28 @@ exports.ScanImages = functions.runWith({
   return null;
 
 });
+
+async function getAIdetections(object) {
+  let data;
+  // Check the image content using the Cloud Vision API.
+  try {
+    if (RUNTIME_OPTION.ScanImages && !RUNTIME_OPTION.ScanImages.vision) {
+      log('Skipping vision text detection');
+      data = [{ "textAnnotations": [] }]; //JSON.parse(fs.readFileSync(testData, 'utf8')) ;
+    } else {
+      const visionClient = new vision.ImageAnnotatorClient();
+      data = await visionClient.textDetection(
+        `gs://${object.bucket}/${object.name}`
+      );
+
+    }
+  } catch (e) {
+    log(`error running computer vision ${testData} ${JSON.stringify(e)}`);
+  }
+
+  const detections = data[0].textAnnotations;
+  return detections;
+}
 
 async function compressImage(raceId,filePath, bucketName, metadata) {
 
@@ -425,7 +433,7 @@ async function getImageMetadata(bucket,filePath,metadataReqd=true) {
  */
 async function saveJPG(bucket, filePath, image, metadata, watermarkImg) {
 
-  assert(image instanceof sharp)
+  // assert(image instanceof sharp)
   // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
   const transformer = sharp(); 
   transformer.rotate()
@@ -642,63 +650,11 @@ function decodeKey(){
   return x.replace(/[\^]/g,"/")
 }
 
-
 function cleanForFS(s) {
   return s.replace(/[\/]/g,"_")
 }
-
 
 function getImageHeight(meta){
   return meta.Orientation=="Horizontal (normal)"? meta.ImageHeight : meta.ImageWidth
   // return (meta.orientation || 0) >= 5 ? meta.height : meta.width;
 }
-
-// async function generateThumbnail (object) {
-//   const fileBucket = object.bucket; // The Storage bucket that contains the file.
-//   const filePath = object.name; // File path in the bucket.
-//   const contentType = object.contentType; // File content type.
-
-//   // Exit if this is triggered on a file that is not an image.
-//   if (!contentType.startsWith('image/')) {
-//     functions.logger.log('This is not an image.');
-//     return null;
-//   }
-
-//   // Get the file name.
-//   const fileName = path.basename(filePath);
-//   // Exit if the image is already a thumbnail.
-//   if (fileName.startsWith(THUMBNAILS_FOLDER)) {
-//     functions.logger.log('Already a Thumbnail.');
-//     return null;
-//   }
-
-//   // Download file from bucket.
-//   const bucket = admin.storage().bucket(fileBucket);  //gcs.bucket old
-
-//   const metadata = {
-//     contentType: contentType,
-//   };
-//   // We add a 'thumb_' prefix to thumbnails file name. That's where we'll upload the thumbnail.
-//   const thumbFileName = `${THUMBNAILS_FOLDER}/${fileName}`;
-//   const thumbFilePath = path.join(path.dirname(filePath), thumbFileName);
-//   // Create write stream for uploading thumbnail
-//   const thumbnailUploadStream = bucket.file(thumbFilePath).createWriteStream({metadata});
-
-//   // Create Sharp pipeline for resizing the image and use pipe to read from bucket read stream
-//   const transformer = sharp();
-//   // pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(thumbnailUploadStream);
-//   transformer.resize(  {
-//     width: THUMB_MAX_WIDTH,
-//     height: THUMB_MAX_HEIGHT,
-//     fit: sharp.fit.inside,
-//     position: sharp.strategy.entropy
-//   });
-
-//   bucket.file(filePath)
-//         .createReadStream()
-//         .pipe(transformer)
-//         .pipe(thumbnailUploadStream);
-
-//   return new Promise((resolve, reject) =>
-//       thumbnailUploadStream.on('finish', resolve).on('error', reject));
-// }

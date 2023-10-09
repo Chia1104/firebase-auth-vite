@@ -12,7 +12,7 @@ const callback = (response) => {
 
 <template>
   <Nav />
-  <div class="mt-20 max-w-screen-md mx-auto">
+  <div class="mt-20 max-w-screen-md mx-auto bg-gradient-to-r from-cyan-500 to-blue-500">
     <RouterView  />
     <Footer  />
   </div>

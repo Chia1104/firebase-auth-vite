@@ -14,6 +14,7 @@ import PhotosPage from "../pages/PhotosPage.vue";
 import NotFoundPage from "../pages/exceptions/NotFoundPage.vue";
 import Races from "../pages/Races.vue";
 import Race from "../pages/Race.vue";
+import RaceAdmin from "../pages/RaceAdmin.vue";
 
 import {
     firebaseAuth
@@ -52,8 +53,12 @@ const routes = [
             path: ':raceId/i',
             component: ImageReviewPage,
           },
+          {
+            path: ':raceId/e',
+            component: RaceAdmin,
+          },
         ],
-  },
+    },
     {
         path: '/r',
         name: "Results",

@@ -1,5 +1,4 @@
 <script setup>
-import { defineProps } from 'vue'
 import { useToast } from "primevue/usetoast";
 
 defineProps({
