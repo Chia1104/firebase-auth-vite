@@ -6,9 +6,8 @@
         <template #title > 
           <span @click="klick">Race id {{raceId}}             </span>
         </template>
+
         <template #content>
-          <!-- <tr><td>Now: {{timer.now}}</td><td>Timer:      {{timer.duration}}</td></tr>
-          <tr><td>{{race.status}}</td><td>          {{timer.start}}</td></tr> -->
           
           <tr v-if="option!='Info'">
             <td class="p-inputgroup-addon w-sm" @click="klick">
@@ -34,6 +33,9 @@
             <router-link to="/e" class="text-xl">
               <Button raised icon="pi pi-chevron-left" class="p-2"/> 
             </router-link>
+
+            <!-- <RaceStartList v-if="option=='Start List'" :raceId="raceId" :race="race"/> -->
+
             <div v-if="option=='Record'">
               <camera :waypoint="waypoint" :raceId="raceId" 
               :race="race"  /> 
@@ -55,6 +57,7 @@
             </router-link>
             <Button name="create" @click="klick">Check</Button>
           </template> -->
+
                     
       </Card>       
     </div>
@@ -67,6 +70,7 @@ import { useStore } from 'vuex';
 import Camera from "../components/Webrtc.vue";
 import GeoLoc from "../components/GeoLoc.vue";
 import RaceLog from "../components/RaceLogCard.vue";
+// import RaceStartList from "../components/RaceStartListCard.vue";
 import RaceImages from "../components/RaceImagesCard.vue";
 import RaceInfoPanel from "../components/RaceInfoPanel.vue";
 
@@ -74,6 +78,8 @@ import Card from 'primevue/card';
 
 import SelectButton from 'primevue/selectbutton';
 import Inplace from 'primevue/inplace';
+import DataTable from 'primevue/datatable';
+
 import Dropdown from 'primevue/dropdown';
 import { computed, ref, reactive } from 'vue';
 import { useRoute } from 'vue-router';
@@ -94,7 +100,7 @@ let raceObj
 let race=computed(()=>{
   let racefilt=store.state.datastore.races.filter(r=>r.id==raceId);
   if(racefilt.length) {
-    raceObj=JSON.parse(JSON.stringify(racefilt[0]))
+    raceObj=_.cloneDeep(racefilt[0])
     return raceObj //racefilt[0]
   }
   else return {name:'-',Waypoints:['VENUE']}
@@ -117,14 +123,12 @@ let bibRegex=computed(()=>{
 let raceStatus=ref("")
 let raceStatusOptions=['Started','Stopped']
 const options = ref(['Record','Start List','Provisional','Final Results',
-                'Upload'                
-            ]); //'Info',,'Images'
+            ]); //'Info',,'Images',Upload
 const option = ref(props.option ?? 'Info');
 
 
 console.log({"bibRegex":bibRegex,"race":race, raceId:raceId, props:props})
 
-let js=(x)=>JSON.parse(JSON.stringify(x))
 
 let klick=() => { 
   debugger;

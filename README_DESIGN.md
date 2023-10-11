@@ -82,6 +82,5 @@ photos: Event, WPT
     * with extra bibs  additional bibs
     * will no bibs  * upload with UNKNOWN
 * img capture without distance
-
 * upload with exif date
 * selfie upload

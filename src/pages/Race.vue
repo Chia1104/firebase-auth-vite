@@ -6,14 +6,13 @@
         <template #header class="flex w-full">
           <img class="w-full mx-auto object-cover "
                 :src="getPublicUrl('processed',raceObj?.id,raceObj?.coverPage)"/>  
-                {{ raceObj?.id }}  
         </template>
         <template #title >
           <h1>{{raceObj?.Name}}</h1>
         </template>
         <template #subtitle></template>
         <template #content>
-          <table class="table-auto text-left w-full ">
+          <table id="raceinfo" class="table-auto text-left w-full  ">
             <tr >
               <td>  Date:                 </td>
               <td> {{raceObj?.Date}}        </td>
@@ -69,12 +68,21 @@
         </template>
 
         <template #footer>
-          <Button name="races" label="Races" icon="pi pi-chevron-left" raised
+          <Button name="races" label="Races" raised
               @click="router.push('/e')"></Button>
-          <Button name="edit" label="Edit" raised icon="pi pi-pencil" class="" 
-              @click="router.push(`/e/${raceObj.id}/e`)"></Button> 
-          <Button name="images" label="Images" raised icon="pi pi-images" class="" 
-              @click="router.push(`/e/${raceObj.id}/i`)"></Button> 
+          <a :href = "raceObj?.linkPhotos">
+                <Button v-if="raceObj?.linkPhotos" name="photos" label="Photos" raised icon="pi pi-images" class="" >
+                </Button> 
+          </a>
+          
+          <SplitButton v-if="checkAccessEventRole(raceObj?.id)" :label="raceObj?.id"  icon="pi pi-chevron-left" 
+              @click="router.back()" :model="menuItems" raised/>
+          <!-- <span >
+            <Button name="edit" label="Edit" raised icon="pi pi-pencil" class="" 
+                @click="router.push(`/e/${raceObj?.id}/eedit`)"></Button> 
+            <Button name="images" label="Images" raised icon="pi pi-images" class="" 
+                @click="router.push(`/e/${raceObj?.id}/images`)"></Button> 
+          </span> -->
         </template>
                   
       </Card>
@@ -85,14 +93,14 @@
 <script setup>
 
 import { useStore } from 'vuex';
-import { useRouter, useLink } from 'vue-router'
-import { useRoute } from 'vue-router';
-import Card from 'primevue/card';
-// import SelectButton from 'primevue/selectbutton';
+import { useRouter, useLink, useRoute } from 'vue-router'
 import { computed, ref, reactive } from 'vue';
+import Card from 'primevue/card';
+import SplitButton from 'primevue/splitbutton';
+// import SelectButton from 'primevue/selectbutton';
 
 import RaceAdmin from "./RaceAdmin.vue";
-import { getPublicUrl} from "../api" 
+import { getPublicUrl,  getUser, checkAccessEventRole} from "../api" 
 
 let props = defineProps ({
   option: String
@@ -108,28 +116,52 @@ const raceId = route.params.raceId
 store.dispatch('getRacesAction')
 let waypoint=ref(store.state.datastore.race.waypoint)  //ref("venue")
 
+const raceObj= computed(()=>{
+  try{
+    return store.state.datastore.racesObj[raceId]
+  } catch (e) { 
+    return {name:'-',Waypoints:['VENUE']} //, error: e 
+  }
+});
 
-const raceObj=store.state.datastore.racesObj[raceId]
-// computed(()=>{
-//   try{
-//     return store.state.datastore.racesObj[raceId]
-//   } catch (e) { 
-//     return {name:'-',Waypoints:['VENUE']} //, error: e 
-//   }
-// });
-
+const menuItems = [
+    { label: 'Photos search', 
+      icon: 'pi pi-images', 
+      to: `/p` 
+    },
+    {
+      label: 'Edit Race',
+      icon: 'pi pi-pencil',
+      command: () => { router.push(`/e/${raceObj.value?.id}/edit`)    ; }
+    },
+    { label: 'Start List', icon: 'pi pi-clock', 
+      command: () => { router.push(`/e/${raceObj.value?.id}/bibs`)    ; }
+    },
+    { label: 'Provisional Timing', icon: 'pi pi-clock', 
+      command: () => { router.push(`/e/${raceObj.value?.id}/log`)    ; }
+    },
+    { label: 'Upload Images', icon: 'pi pi-bolt', 
+      command: () => { router.push(`/e/${raceObj.value?.id}/images`)    ; } 
+    },
+    {
+      label: 'Organizer Website',
+      icon: 'pi pi-external-link',
+      command: () => {
+          window.location.href = raceObj.value.linkOrg;
+      }
+    },
+];
 
 let raceStatus=ref("")
 let raceStatusOptions=['Started','Stopped']
 const options = ref(['Record','Start List','Provisional','Final Results',
-                'Upload'                
             ]); //'Info',,'Images'
 const option = ref(props.option ?? 'Info');
 
 
-console.log({"race":raceObj, raceId:raceId, props:props})
+console.log({"race":raceObj, raceId:raceId, props:props,user:getUser()})
 
-let js=(x)=>JSON.parse(JSON.stringify(x))
+// let js=(x)=>JSON.parse(JSON.stringify(x))
 
 let klick=() => { 
   debugger;
@@ -164,5 +196,10 @@ function startTimer() {
 
 div.p-selectbutton ::v-deep(div) {
   padding: 2px;
+}
+
+table#raceinfo ::v-deep(td) {
+  padding-top: .5em;
+  border-top: thin lightgrey;
 }
 </style>

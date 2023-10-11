@@ -11,10 +11,12 @@ import RegisterPage from "../pages/RegisterPage.vue";
 import ResultsPage from "../pages/ResultsPage.vue";
 import ImageReviewPage from "../pages/ImageReviewPage.vue";
 import PhotosPage from "../pages/PhotosPage.vue";
-import NotFoundPage from "../pages/exceptions/NotFoundPage.vue";
+import RaceLog from "../pages/RaceLogPage.vue";
+import RaceStartList from "../pages/RaceStartListPage.vue";
 import Races from "../pages/Races.vue";
 import Race from "../pages/Race.vue";
 import RaceAdmin from "../pages/RaceAdmin.vue";
+import NotFoundPage from "../pages/exceptions/NotFoundPage.vue";
 
 import {
     firebaseAuth
@@ -50,12 +52,20 @@ const routes = [
             component: Race,
           },
           {
-            path: ':raceId/i',
+            path: ':raceId/images',
             component: ImageReviewPage,
           },
           {
-            path: ':raceId/e',
+            path: ':raceId/edit',
             component: RaceAdmin,
+          },
+          {
+            path: ':raceId/bibs',
+            component: RaceStartList,
+          },
+          {
+            path: ':raceId/log',
+            component: RaceLog,
           },
         ],
     },

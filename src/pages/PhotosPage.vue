@@ -118,7 +118,7 @@ import { uploadFiletoGCS } from "../helpers/file-uploader"
 import axios from 'axios';
 import Compressor from 'compressorjs';
 import { db, storage } from "../../firebase/config" 
-
+import _ from "lodash"
 // wakesup the backend
 fetch(config.api.faceMatchUpload+'/api/faceapi',{headers: {mode: "cors", "Referer": "https://runpix.web.app" }}) //call the fetch function passing the url of the API as a parameter
 .then(function(x) {console.log(`/api/faceapi: Status: ${x.status}`)})
@@ -130,10 +130,10 @@ store.dispatch('getRacesAction')
 const route = useRoute();  
 
 const races =  computed(() => 
-    store.state.datastore.races
-    .filter(r=>(r.photoStatus && (r.photoStatus.indexOf("available")>=0) ))
-    .sort((a,b)=>a.Date<b.Date)
-    );
+                _.orderBy(store.state.datastore.races
+                  .filter(r=>(r.photoStatus && (r.photoStatus.indexOf("available")>=0) )),
+                  "Date","desc")
+                );
   
 let raceId = ref("")
 if(route.params.raceId){
@@ -224,9 +224,9 @@ const searchImages = async () => {
     if(querySnapshot.docs.length){
       let data = querySnapshot.docs.map(x=>x.data())
       
-      allImages.value=data
-                        .map(mapFaceMatchRet)
-                        .sort((a,b)=>(a.dist>b.dist)) ;
+      allImages.value=_.orderBy(data
+                        .map(mapFaceMatchRet),
+                        "dist","asc") ;
     }
     message.value=`Found photos for uploaded face`
     return _items
@@ -313,9 +313,9 @@ let faceUploader=async (x)=>{
       .then((ret) => {
         console.log('Upload success',ret);
     
-        allImages.value=ret.data
-                          .map(mapFaceMatchRet)
-                          .sort((a,b)=>(a.dist>b.dist)) ;        
+        allImages.value=_.orderBy(ret.data
+                                    .map(mapFaceMatchRet),
+                                    "dist","asc") ;        
         message.value=`Searching faces in the uploaded image`
         setTimeout(()=>{message.value=''},5000)
       })

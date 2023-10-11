@@ -13,6 +13,7 @@ import TabPanel from 'primevue/tabpanel';
 import InputText from 'primevue/inputtext';
 import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
 import { getPublicUrl} from "../api" 
+import _ from "lodash"
 
 const store = useStore()
 const router = useRouter()
@@ -20,7 +21,7 @@ const router = useRouter()
 const newRaceId=ref('newrace23month')
 const races = computed(() => {let arr = store.state.datastore.races
                               if (arr instanceof Object) 
-                                arr=arr.sort((a,b)=>a.Date<b.Date)
+                                arr=_.orderBy(arr,"Date","desc")
                                 if (nolist.value ){
                                   return arr
                                 } else {
@@ -53,7 +54,7 @@ let fsdb={races:[]}
 
 let nolist=ref(false)
 
-let js=(x)=>JSON.parse(JSON.stringify(x))
+// let js=(x)=>JSON.parse(JSON.stringify(x))
 
 let klick=() => { 
   debugger;
@@ -78,13 +79,14 @@ NOP(fsdb);
 
       <div class="card">
         <DataTable :value="races"  stripedRows>
-            <Column field="id">       
+            <Column field="id" style="width: 20%"  class="p-1">       
               <template #body="{ data }">         
                 <img class="w-20 rounded-full drop-shadow object-cover aspect-square"
-                  :src="getPublicUrl('thumbs',data?.id,data?.coverPage)"/>  
+                  :src="getPublicUrl('thumbs',data?.id,data?.coverPage)"
+                  @click="router.push(`/e/${data.id}`)"/>  
               </template>
             </Column>
-            <Column field="Name" header="Name" sortable>
+            <Column field="Name" header="Name" sortable  class="p-1">
               <template #body="{ data }">
                 <div class="container">                
                 <small>
@@ -93,10 +95,10 @@ NOP(fsdb);
                 </div>
               </template>
             </Column>
-            <Column field="Date" header="Date Location" sortable>
+            <Column field="Date" header="Date Location" sortable  class="p-1">
               <template #body="{ data }">
                 <div class="flex flex-row  ">
-                <Button @click="router.push(`/e/${data.id}`)" icon="pi pi-flag" raised />
+                <Button @click="router.push(`/e/${data.id}`)" icon="pi pi-flag" class="rounded-full aspect-square w-10"/>
                 <span class="text-sm">
                   <div>{{ data.Date }}</div>
                   <div>{{data.Location}}</div>
@@ -118,11 +120,6 @@ NOP(fsdb);
             <td> {{r.Date}} </td>
             <td> {{ r.Location }}</td>
              -->
-
-          <!-- <Button type="button" @click="router.push(`/e/${r.id}/e`)" icon="pi pi-pencil"
-            label="Edit"  raised></Button>
-          <Button type="button" @click="router.push(`/e/${r.id}/i`)" icon="pi pi-images" 
-            label="Images"  raised></Button> -->
 
         <!-- </tr>
       </DataTable>         -->

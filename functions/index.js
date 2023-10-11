@@ -199,7 +199,7 @@ async function mapParams(params){
 }
  // This HTTPS endpoint can  be made accessed by `Authorization` HTTP header
  // with value `Bearer <Firebase ID Token>`.  Not used
- exports.api = functions.https.onRequest(app);
+exports.api = functions.https.onRequest(app);
 /* ~~~~~~~~~~~~ 4. Firestore functions  ~~~~~~~~~~~~~ */
 
 // Listen for changes in all documents in the 'users' collection and all subcollections
@@ -320,7 +320,7 @@ exports.ScanImages = functions.runWith({
           error('error updFSReadings',e)
         }
       }
-    };
+    }
 
     // trim attributions TODO
     // Saving Image data in firestore.. referred image should be jpg
@@ -342,7 +342,7 @@ async function getAIdetections(object) {
   try {
     if (RUNTIME_OPTION.ScanImages && !RUNTIME_OPTION.ScanImages.vision) {
       log('Skipping vision text detection');
-      data = [{ "textAnnotations": [] }]; //JSON.parse(fs.readFileSync(testData, 'utf8')) ;
+      data = [{ "textAnnotations": [] }]; 
     } else {
       const visionClient = new vision.ImageAnnotatorClient();
       data = await visionClient.textDetection(

@@ -152,3 +152,23 @@ export const  getPublicUrl = (folder,raceId,file) =>{
         return `https://storage.googleapis.com/run-pix.appspot.com/${folder}/${raceId}/${filename}`
     }
 }
+
+/**
+ * 
+ * @param {*} event : event id
+ * @param {*} role : manager,volunteer,runner,others
+ * @returns 
+ */
+export const  checkAccessEventRole = (event,role) =>{
+    let user= firebaseAuth.currentUser;
+    if(user) {
+        if (role){
+            //check user id in raceManager, raceVolunteers in database
+            
+        } else {
+            return true
+        }
+    } else {
+        return false
+    }
+}

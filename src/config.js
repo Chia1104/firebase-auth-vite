@@ -5,7 +5,9 @@ config.storage = {};
 config.api = {};
 config.face = {};
 config.images = {};
+config.raceMgt = {};
 
+config.raceMgt.ingoredBibStatuses=[null,'','From sheet','From sheet'] 
 config.face.minDistx100 = 40
 config.images.limit_pics = 5000
 

@@ -75,8 +75,9 @@ import { computed ,ref, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
 import {db} from '../../firebase/config'
+// import _ from "lodash"
 
-let js=(x)=>JSON.parse(JSON.stringify(x))
+// let js=(x)=>JSON.parse(JSON.stringify(x))
 let getArr=(x,sep=',')=> (x && typeof x ==  "string" )? x.split(sep): x 
 let joinArr=(x,sep=",")=>{//console.debug(x);
       let ret = (x && x instanceof Array) ? x.filter((v, i, arr) => arr.indexOf(v) === i)
@@ -136,7 +137,7 @@ let flagOff=(e,a)=>{
   
   race.value.timestamp['start']=now
       
-  let ts=JSON.parse(JSON.stringify(race.value.timestamp))
+  let ts=_.cloneDeep(race.value.timestamp)
   
   updateDoc(doc(db,`races/${raceId}`),{'timestamp':ts})
   setDoc(doc(db,
@@ -152,7 +153,7 @@ let flagOff=(e,a)=>{
 
 let saveChanges=(e)=>{
   const now=new Date().toISOString()
-  let UpdValues=JSON.parse(JSON.stringify(race.value))
+  let UpdValues=_.cloneDeep(race.value)
   
   if (!race.value.timestamp)  UpdValues['timestamp']={'create': now}
   UpdValues['timestamp']['modify']= now

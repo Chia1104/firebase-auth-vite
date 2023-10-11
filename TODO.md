@@ -6,6 +6,13 @@
  
 # Todo:
 
+* result publishing
+
+arrayOfMins=_.chain(allEntries.value).filter(checkStatus).filter(checkBib).groupBy("bib").map((x,k)=>_.minBy(x,"timestamp")).value() 
+
+keys_=_.words("bib name timestamp status waypoint gender ")
+res=_.chain(allEntries.value).filter(checkBib).groupBy("bib").map((x,k)=>_.chain(x).minBy("timestamp").pick(keys_).value()).orderBy("timestamp").groupBy(x=>x.status+"-"+x.waypoint+'-'+x.gender).value()
+
 * video capture
 * user permissions
 * timestamp update
@@ -14,11 +21,12 @@
 * timestamp from server
 * Logic to add timing entry: need lot of work
 * watch the queue traffic
-* rename API as /image as /api/facematch
 * search for all images (in case of seach image has all face. current solution any faces)
 
 
 ### current 
+* rename API as /image as /api/facematch
+
 * defect: merge two fields 'user' for start else 'userId'
 * Event mgt UI finetuning
 * backend changes
