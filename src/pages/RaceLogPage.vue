@@ -108,6 +108,7 @@
   </template>
   <template #footer>
     <Button @click="router.back()" icon="pi pi-chevron-left"></Button>
+    <Button @click="finalize_results">Finalize</Button>
     <Button @click="klick">popup</Button>
   </template>
 </Card>
@@ -129,7 +130,7 @@ import Dropdown from 'primevue/dropdown';   // optional
 import Card from 'primevue/card';                   // optional
 import { db, storage } from "../../firebase/config" //storage
 import { config } from "../config"
-import { collection,query,doc,limit, orderBy ,onSnapshot,getDocs, updateDoc } from "firebase/firestore";
+import { collection,query,doc,limit, orderBy ,onSnapshot,getDocs, updateDoc,setDoc } from "firebase/firestore";
 import _ from "lodash"
 
 const GS_PREFIX='https://storage.googleapis.com/run-pix.appspot.com/'
@@ -182,14 +183,60 @@ const unsubscribe = onSnapshot(query(collection(raceDoc, "readings"),
                 (querySnapshot) => {
   allEntries.value=[]
   querySnapshot.forEach(mapReading);
-  // console.log("Array", entries.value);
+
+  allEntries.value=addStatusFields(allEntries.value)
+  
 });
 
 let entries=computed(()=> {
   let ret=_.cloneDeep(allEntries.value)
-
+  // ret = addStatusFields(ret) moved to all entries
   // status with status from bib
+  const bibRegExp = race?.bibPattern ? RegExp(race.bibPattern) : false
 
+  if (selWpt.value && (selWpt.value!='All') ){
+     ret = ret.filter(x=>x.waypoint==selWpt.value)
+  } 
+
+  // show All or only valid
+
+  if (showAll.value=='Valid'){ // debugger
+    ret=ret.filter(x=> x.status=='valid')
+  } if (showAll.value=='Invalid'){  
+    ret=ret.filter(x=> !(x.status=='valid'))
+  }
+  console.log(`selected ${ret.length}/${allEntries.value.length}`)
+  // name or pattern matched
+  const matchBib=(x)=> {const patMatch= (x.bib.match(bibRegExp))
+                      // console.warn(`${x.bib}:${patMatch?1:0}||${x.name}>>${patMatch || (x.name!=NOMATCH)}`)
+                      return patMatch || (x.name!=NOMATCH)} 
+
+  if (bibsVal.value=='Matched'){
+     ret = ret.filter(x=> !['','N/A'].includes(x?.name)) // not in this list
+  } else if (bibsVal.value=='Pattern'){
+     ret = ret.filter(matchBib)
+  } else if (bibsVal.value=='N/A'){
+    ret = ret.filter(x=>!matchBib(x) )
+  }
+
+  if (['Male','Female'].includes(genderVal.value)){
+     ret = ret.filter(x=>x.gender==genderVal.value)
+  }
+  // sort  
+  // debugger
+  
+  ret = _.orderBy(ret,"timestamp",sortVal.value.toLowerCase())
+  
+  // search text debugger
+  if (bibSearch.value) ret = ret.filter(x=>x.bib.includes(bibSearch.value) || 
+                                          x.name.includes(bibSearch.value) || 
+                                          x.status.includes(bibSearch.value) ) 
+
+  return ret
+ })
+
+function addStatusFields(ret) {
+  
   // mark entries started before start of race
   ret = _.map(ret,x=>{if (race?.timestamp?.start && x.timestamp < race?.timestamp?.start){
                           x.status=(x.status||'')+'prior'
@@ -229,51 +276,8 @@ let entries=computed(()=> {
           },[])
           .value()               
 
-
-  const bibRegExp = race?.bibPattern ? RegExp(race.bibPattern) : false
-
-  if (selWpt.value && (selWpt.value!='All') ){
-     ret = ret.filter(x=>x.waypoint==selWpt.value)
-  } 
-
-  // show All or only valid
-
-  if (showAll.value=='Valid'){ // debugger
-    ret=ret.filter(x=> x.status=='valid')
-  } if (showAll.value=='Invalid'){  
-    ret=ret.filter(x=> !(x.status=='valid'))
-  }
-  console.log(`selected ${ret.length}`)
-  // name or pattern matched
-  const matchBib=(x)=> {const patMatch= (x.bib.match(bibRegExp))
-                      // console.warn(`${x.bib}:${patMatch?1:0}||${x.name}>>${patMatch || (x.name!=NOMATCH)}`)
-                      return patMatch || (x.name!=NOMATCH)} 
-
-  if (bibsVal.value=='Matched'){
-     ret = ret.filter(x=> !['','N/A'].includes(x?.name)) // not in this list
-  } else if (bibsVal.value=='Pattern'){
-     ret = ret.filter(matchBib)
-  } else if (bibsVal.value=='N/A'){
-    ret = ret.filter(x=>!matchBib(x) )
-  }
-
-  if (['Male','Female'].includes(genderVal.value)){
-     ret = ret.filter(x=>x.gender==genderVal.value)
-  }
-  // sort  
-  // debugger
-  
-  ret = _.orderBy(ret,"timestamp",sortVal.value.toLowerCase())
-  
-  // search text debugger
-  if (bibSearch.value) ret = ret.filter(x=>x.bib.includes(bibSearch.value) || 
-                                          x.name.includes(bibSearch.value) || 
-                                          x.status.includes(bibSearch.value) ) 
-
   return ret
- })
-
-
+}
 function mapReading(doc) {
   let re=RegExp(props.bibRegex ? `^${props.bibRegex}$` : '^\\d{3,5}$')
   let data = doc.data()
@@ -433,10 +437,72 @@ function submitChange(){
   } else {
     console.warn(`Non bib found `)
   }
+}
+
+ /**
+  * Bib	25
+
+Bib "1"
+Category "Male - 10 - 14 years"
+Finish Time "7:17:32"
+Gender "Male"
+Name "KRITARTH AMIT MAHAJAN "
+Race "400m"
+Race Time "0:07:32"
+Rank "1"
+Start Time "7:10:00" 
+  */
+function finalize_results(){
+  console.log("finalizing results")
+  const keys_=_.split("bib name timestamp status waypoint gender imagePath"," ")
+  let results= _.chain(allEntries.value)
+            .filter(x=>x.waypoint!='VENUE')
+            .filter(x=>'valid split volunteer dnf dns'.includes(x.status.toLowerCase()))
+            .map(x=>{
+              let startTime = race?.timestamp.start ? new Date(race?.timestamp.start).toTimeString() : "-";
+              return {
+                Bib:  x.bib,
+                Name: x.name,
+                Race: x.waypoint,
+                Gender: x.gender,
+                Category: x.status=='valid' ? `${x.waypoint} - ${x.gender}` : `Other - ${x.status}`,
+                "Start Time":  startTime,
+                "Race Time": period(x.timestamp),
+                "Finish Time": x.timestamp.toTimeString(),
+                Status: x.status,
+                Rank: ""
+            }})
+            // .groupBy()
+            .value()
+  updateDoc(doc(db,`races/${raceId}`),{
+      'timestamp.result' : new Date().toISOString()
+    })
+  // update each bib in the loop
+  // debugger;
+  let ret = _.chain(results)
+    .groupBy(x=>x.Category+x.Status)
+    .forIn((catResults,k)=>_.chain(catResults)
+                            .orderBy("Race Time")
+                            .forEach((x,i)=>{  
+                              try{
+                                x.Rank = i+1;
+                                setDoc(doc(db,'races',raceId,'result',x.Bib), x  )
+                              } 
+                              catch(e) {
+                                console.error("error saving",e)
+                              }
+                            })
+                            .value()
+    )
+    .value();
+
+  
 
 }
 
 </script>
+
+
 <style scoped>
 td.image {
   max-width: 2em;

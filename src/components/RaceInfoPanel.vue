@@ -75,7 +75,7 @@ import { computed ,ref, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
 import {db} from '../../firebase/config'
-// import _ from "lodash"
+import _ from "lodash"
 
 // let js=(x)=>JSON.parse(JSON.stringify(x))
 let getArr=(x,sep=',')=> (x && typeof x ==  "string" )? x.split(sep): x 
