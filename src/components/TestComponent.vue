@@ -19,7 +19,7 @@ const increment = () => {
 
 <template>
 
-  <!-- <h1 class="test-color">{{ msg }}</h1> -->
+  <h1 class="test-color">{{ msg }}</h1>
   <div id="container">
 
 <!-- <script src="js/main.js" async></script> -->

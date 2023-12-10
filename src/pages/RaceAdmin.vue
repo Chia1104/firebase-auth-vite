@@ -15,7 +15,7 @@
             </td>
             <td>
               <!-- {{ race }} -->
-              <Dropdown v-model="waypoint" :options="race.Waypoints" editable 
+              <Dropdown v-model="waypoint" :options="race?.Waypoints" editable 
                   placeholder="Select a Waypoint" class="md:w-14rem" />   
               </td>
           </tr>
@@ -37,7 +37,7 @@
             <!-- <RaceStartList v-if="option=='Start List'" :raceId="raceId" :race="race"/> -->
 
             <div v-if="option=='Record'">
-              <camera :waypoint="waypoint" :raceId="raceId" 
+              <Camera :waypoint="waypoint" :raceId="raceId" 
               :race="race"  /> 
               <!-- :bibs="bibs" -->
               <geo-loc/>
@@ -66,8 +66,8 @@
 
 <script setup>
 import { useStore } from 'vuex';
-// import Camera from "../components/Camera.vue";
-import Camera from "../components/Webrtc.vue";
+// import Camera from "../components/old_Camera.vue";
+import Camera from "../components/Camera.vue";
 import GeoLoc from "../components/GeoLoc.vue";
 import RaceLog from "../components/RaceLogCard.vue";
 // import RaceStartList from "../components/RaceStartListCard.vue";
@@ -83,6 +83,8 @@ import DataTable from 'primevue/datatable';
 import Dropdown from 'primevue/dropdown';
 import { computed, ref, reactive } from 'vue';
 import { useRoute } from 'vue-router';
+import _ from "lodash"
+
 let props = defineProps ({
   option: String
 })
@@ -98,15 +100,17 @@ let waypoint=ref(store.state.datastore.race.waypoint)  //ref("venue")
 
 let raceObj
 let race=computed(()=>{
+
   let racefilt=store.state.datastore.races.filter(r=>r.id==raceId);
-  if(racefilt.length) {
+
+  if(racefilt.length>0) {
+    // debugger
     raceObj=_.cloneDeep(racefilt[0])
+  
     return raceObj //racefilt[0]
-  }
-  else return {name:'-',Waypoints:['VENUE']}
-  });
-
-
+  } else 
+    return {name:'-',Waypoints:['VENUE']}
+});
 
 
 let bibRegex=computed(()=>{

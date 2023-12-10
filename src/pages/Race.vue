@@ -68,21 +68,17 @@
         </template>
 
         <template #footer>
-          <Button name="races" label="Races" raised
+          <Button name="races" label="Races" raised icon="pi pi-chevron-left" 
               @click="router.push('/e')"></Button>
+
           <a :href = "raceObj?.linkPhotos">
                 <Button v-if="raceObj?.linkPhotos" name="photos" label="Photos" raised icon="pi pi-images" class="" >
                 </Button> 
           </a>
           
-          <SplitButton v-if="checkAccessEventRole(raceObj?.id)" :label="raceObj?.id"  icon="pi pi-chevron-left" 
-              @click="router.back()" :model="menuItems" raised/>
-          <!-- <span >
-            <Button name="edit" label="Edit" raised icon="pi pi-pencil" class="" 
-                @click="router.push(`/e/${raceObj?.id}/eedit`)"></Button> 
-            <Button name="images" label="Images" raised icon="pi pi-images" class="" 
-                @click="router.push(`/e/${raceObj?.id}/images`)"></Button> 
-          </span> -->
+          <SplitButton v-if="checkAccessEventRole(raceObj?.id)" :label="raceObj?.id"  
+               :model="menuItems" raised/>
+          <!-- @click="router.back()"-->
         </template>
                   
       </Card>

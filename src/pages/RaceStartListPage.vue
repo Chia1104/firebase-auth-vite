@@ -92,17 +92,6 @@ const race=racesObj[raceId]
 ]);
 
 
- /**
-  * Bib	25
-Name	SHWETA SHEKHAR VISHWASRAO
-Gender	Female
-Race	2500m
-Start	DNS
-Finish	DNS
-Net Time	#VALUE!
-Category	Female - 18 & above
-Rank	DNS
-  */
 const GS_PREFIX='https://storage.googleapis.com/run-pix.appspot.com/'
 const NOMATCH='N/A'
 
