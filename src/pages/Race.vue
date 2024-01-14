@@ -3,9 +3,11 @@
   <div class="container mx-auto">
     <div class="w-full text-center justify-center flex-col">
       <Card>
-        <template #header class="flex w-full">
-          <img class="w-full mx-auto object-cover "
+        <template #header >
+          <div class="w-full">
+            <img class="mx-auto max-h-80 shadow-lg"
                 :src="getPublicUrl('processed',raceObj?.id,raceObj?.coverPage)"/>  
+          </div>
         </template>
         <template #title >
           <h1>{{raceObj?.Name}}</h1>
@@ -30,40 +32,20 @@
               </td>
             </tr>
 
-            <tr>
-              <td>Registration </td>
-              <td>
-                <a :href="raceObj?.linkReg" class="text-blue-600 visited:text-purple-600 hover:decoration-wavy">
-                    {{raceObj?.linkReg}}</a> 
+            <tr  v-for="(lbl,fld) in links" >
+            <!-- {{ lnk }} -->
+              <td > {{ lbl }} 
+                <span v-if="fld=='linkPhotos' && raceObj?.[fld] ">
+                  <Tag v-if="raceObj?.photoStatus?.includes('avail')" value="Available"/>
+                  <Tag v-else value="Unavailable"/>
+                </span>
               </td>
-            </tr>   
-
-            <tr >
-              <td v-if="raceObj?.photoStatus?.includes('avail')">
-                  Photos available </td>
-              <td v-else>
-              Photos unavailable.  Please stay tuned</td>
               <td>
-                  <a :href="raceObj?.linkPhotos" class="text-blue-600 visited:text-purple-600 hover:decoration-wavy">
-                    {{raceObj?.linkPhotos}}</a> 
+                <a :href="raceObj?.[fld]" class="text-blue-600 visited:text-purple-600 hover:decoration-wavy">
+                    {{raceObj?.[fld]}} </a> 
               </td>
-              
             </tr> 
 
-            <tr v-if="raceObj?.linkResults">
-              <td>
-                  Results
-              </td>
-              <td >
-                  <a :href="raceObj?.linkResults" class="text-blue-600 visited:text-purple-600 ">
-                    {{raceObj?.linkResults}}</a> 
-              </td>
-              
-            </tr> 
-            <!-- <li v-for='k,v in {"Registration":"linkReg"}'>
-              <span >{{v}} : <a :href="raceObj[k]">{{raceObj[k]}}</a> 
-              </span>
-            </li> -->
           </table>
         </template>
 
@@ -94,16 +76,18 @@ import { computed, ref, reactive } from 'vue';
 import Card from 'primevue/card';
 import SplitButton from 'primevue/splitbutton';
 // import SelectButton from 'primevue/selectbutton';
-
+import { config } from '../config';
+import Tag from 'primevue/tag'
 import RaceAdmin from "./RaceAdmin.vue";
 import { getPublicUrl,  getUser, checkAccessEventRole} from "../api" 
+import _ from "lodash"
 
 let props = defineProps ({
   option: String
 })
 
 const bibRegexDefault = /^\d{3,5}$/;
-
+const links=ref(_.pickBy(config.raceInfoPanelLabels,(v,k)=>_.startsWith(k,'link')))
 const route = useRoute();  
 const router = useRouter()
 const store = useStore()
@@ -197,5 +181,9 @@ div.p-selectbutton ::v-deep(div) {
 table#raceinfo ::v-deep(td) {
   padding-top: .5em;
   border-top: thin lightgrey;
+}
+
+btn {
+  @apply bg-blue-500 hover:bg-blue-400
 }
 </style>

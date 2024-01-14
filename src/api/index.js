@@ -1,5 +1,5 @@
 import { signInWithEmailAndPassword,GoogleAuthProvider, signInWithRedirect,signInWithPopup, createUserWithEmailAndPassword, signOut , updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { collection, doc, getDocs, getDoc  } from "firebase/firestore"; 
+import { collection, doc, getDocs, getDoc, setDoc  } from "firebase/firestore"; 
 
 import { firebaseAuth, db } from '../../firebase/config';
 
@@ -132,7 +132,7 @@ export const getAllDocs = (path) => {
 
 export const  getDocData = async (path) => {
     // debugger
-    console.log(path)
+    console.log(`getDocData(): ${path}`)
     const docRef = doc(db, path);
     // console.debug(docRef)
     return await getDoc(docRef).then((docSnap)=> {
@@ -171,4 +171,32 @@ export const  checkAccessEventRole = (event,role) =>{
     } else {
         return false
     }
+}
+
+export const setDocData = async (path,payload,merge) => {
+    // debugger
+    // console.log(`setDocData(): ${path}`)
+    const docRef = doc(db, path);
+
+    if (authorized()) {    
+        return await setDoc(docRef,
+                            payload,
+                            merge? {merge: true} : {} )
+                        .then((ret)=> {
+                return ret;
+            }).catch((error) => {
+                // doc.data() will be undefined in this case
+                console.debug("Error in setDocData()",error);
+                throw Error("Error in setDocData()")
+            }) 
+        }else{
+            console.debug("Error in setDocData()",error);
+            throw Error("Error in setDocData()") 
+        }
+}
+
+function authorized(){
+    // debugger
+    // firebaseAuth.currentUser
+    return true
 }

@@ -12,10 +12,12 @@ const callback = (response) => {
 
 <template>
   <Nav />
-  <div class="mt-20 max-w-screen-md mx-auto bg-gradient-to-r from-cyan-500 to-blue-500">
-    <RouterView  />
-    <Footer  />
+  <!-- LOGIN Status -->
+  <div class="mt-20 max-w-screen-md mx-auto bg-gradient-to-r from-cyan-500 to-blue-500 border-red-600">
+    <RouterView />
   </div>
+  <Footer  />
+
   <!-- Login  
   class="md:min-h-full" for Router view
   <GoogleLogin :callback="callback"/> -->

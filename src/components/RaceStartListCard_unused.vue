@@ -50,6 +50,7 @@ import Dropdown from 'primevue/dropdown';   // optional
 // import Row from 'primevue/row';                   // optional
 import { db, storage } from "../../firebase/config" //storage
 import { collection,query,doc,limit, orderBy ,onSnapshot,getDocs, updateDoc } from "firebase/firestore";
+import { config } from '../config';
 
 let props = defineProps({
   race: Object,
@@ -78,7 +79,7 @@ debugger;
   * 
   */
 const race = props.race;
-const GS_PREFIX='https://storage.googleapis.com/run-pix.appspot.com/'
+const GS_PREFIX=config.GS_PREFIX
 const NOMATCH='N/A'
 const store = useStore()
 const races = store.state.datastore.races;

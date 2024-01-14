@@ -185,7 +185,6 @@ function stopGPS() {
 }
 startTimer()
 
-
 </script>
 
 <style scoped>

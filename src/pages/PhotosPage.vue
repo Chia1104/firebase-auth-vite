@@ -7,14 +7,14 @@
     <form @submit="searchImages" class="gap-2 mx-2">
       <Dropdown v-model="raceId" :options="races" optionLabel="Name" optionValue="id"
                         placeholder="Select a race" class="md:w-14rem w-full" />   
-      <div class="card flex justify-content-center w-full  py-1" v-if="!races.find(x=>x.id==raceId)?.photoStatus.includes('faceonly')">
-        <Button @click="bibSelection='';allImages=[];uploadedImage=''" class="p-button-primary" raised >
+      <div class="card flex justify-content-center w-full gap-2 py-1" v-if="!races.find(x=>x.id==raceId)?.photoStatus.includes('faceonly')">
+        <Button @click="bibSelection='';allImages=[];uploadedImage=''" class="text-white" raised >
           <i class="pi pi-times"></i>
         </Button>
         <AutoComplete id="searchBib" v-model="bibSelection" showClear  :suggestions="items" @complete="searchBib"  placeholder="Enter your BIB number"
-          :dropdown-click="searchBib" class="w-full" />
+          :dropdown-click="searchBib" class="w-full" inputClass="px-2"/>
           <!-- <AutoComplete v-model="selectedItem" :suggestions="filteredItems" @complete="searchItems" :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="label" dropdown /> -->
-        <Button name="searchImages" @click="searchImages"  class="p-button-secondary " raised>
+        <Button name="searchImages" @click="searchImages"  class="text-white" raised>
           <i class="pi pi-search"></i>
         </Button>
       </div>                     

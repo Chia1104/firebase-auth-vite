@@ -106,15 +106,29 @@
       </template>
     </Dialog>
   </template>
+
+
   <template #footer>
     <Button @click="router.back()" icon="pi pi-chevron-left"></Button>
     <Button @click="finalize_results">Finalize</Button>
     <Button @click="klick">popup</Button>
+    <!-- {{  race  }} -->
+    <div v-if="totalFinalizedEntries">
+    {{ processedFinalizedEntries }} / {{  totalFinalizedEntries }} entries processed
+    </div>
   </template>
 </Card>
 </template>
 
 <script setup>
+// const props=defineProps({
+//   raceId: String,
+//   race: String,
+// })
+// const props={
+//   raceId: raceId,
+//   race: race,
+// }
 import { computed, ref } from 'vue'
 import { useStore } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
@@ -133,21 +147,19 @@ import { config } from "../config"
 import { collection,query,doc,limit, orderBy ,onSnapshot,getDocs, updateDoc,setDoc } from "firebase/firestore";
 import _ from "lodash"
 
-const GS_PREFIX='https://storage.googleapis.com/run-pix.appspot.com/'
+const GS_PREFIX=config.GS_PREFIX
 const NOMATCH='N/A'
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
-store.dispatch('getRacesAction')
-
 const raceId = route.params.raceId
+
+store.dispatch('getRaceObjAction',raceId)
+
 const racesObj = store.state.datastore.racesObj;
-const race=racesObj[raceId]
-// debugger
-const props={
-  raceId: raceId,
-  race: race,
-}
+const race=computed(()=>store.state.datastore.race)
+
+
 
 const bibsOptions = ['Matched','Pattern','All',NOMATCH] //matched
 const bibsVal = ref('All') //matched
@@ -163,36 +175,48 @@ const selWpt=ref('All') // selected waypoints (for display)
 
 const allEntries=ref([])
 let bibs=ref([])
-let raceDoc=doc(db, "races", props.raceId); //
+let raceDoc=doc(db, "races", raceId); //
 
+const totalFinalizedEntries=ref(null)
+const processedFinalizedEntries=ref(0)
 const startTime=computed(()=>{
-  try{return new Date(props.race.timestamp.start)}
-  catch(e) {return ''}
+    try{
+      return new Date(race?.timestamp?.start)
+    } catch(e) {
+      return ''
+    }
   })
+let unsubscribe_readings
 
+// fetch bibs
 const unsubscribe_bibs = onSnapshot(query(
-                            collection(raceDoc, "bibs"),), 
-                            (querySnapshot) => {
-  querySnapshot.forEach(x=>bibs.value.push(x.data()));
+  collection(raceDoc, "bibs"),),
+  (querySnapshot) => {
+    querySnapshot.forEach(x => bibs.value.push(x.data()));
+    // fetch readings
+    unsubscribe_readings = onSnapshot(query(collection(raceDoc, "readings"),
+      orderBy('timestamp', 'desc')), // query 
+      (querySnapshot) => {
+        allEntries.value = []
+        querySnapshot.forEach(mapReading);
 
-});
+        allEntries.value = addStatusFields(allEntries.value)
+
+      });
 
 
-const unsubscribe = onSnapshot(query(collection(raceDoc, "readings"),
-                orderBy('timestamp','desc')), // query 
-                (querySnapshot) => {
-  allEntries.value=[]
-  querySnapshot.forEach(mapReading);
+  });
 
-  allEntries.value=addStatusFields(allEntries.value)
-  
-});
+
+
 
 let entries=computed(()=> {
-  let ret=_.cloneDeep(allEntries.value)
+
+  let ret= _.cloneDeep(allEntries.value)
+            .filter(x=>!x.id.includes("_START_"))  // remove start entries
   // ret = addStatusFields(ret) moved to all entries
   // status with status from bib
-  const bibRegExp = race?.bibPattern ? RegExp(race.bibPattern) : false
+  const bibRegExp = getBibRegExp()
 
   if (selWpt.value && (selWpt.value!='All') ){
      ret = ret.filter(x=>x.waypoint==selWpt.value)
@@ -245,7 +269,7 @@ function addStatusFields(ret) {
               })
   // bib match
   ret = _.map(ret,x=>{if (['','N/A'].includes(x?.name)){
-              x.status='xbib'
+              x.status='noname'
           }
       return x
   })
@@ -258,7 +282,8 @@ function addStatusFields(ret) {
           // debugger
   const splitMap=_.uniqBy(allEntries.value,"waypoint")
             .reduce((a,x)=>{
-              a[x.waypoint]=Number(x.waypoint.replace(/[KMkm]/g,""));
+              if (x?.waypoint)
+                a[x.waypoint]=Number(x.waypoint.replace(/[KMkm]/g,""));
               return a
             },{})       
   ret = _.chain(ret)
@@ -278,15 +303,16 @@ function addStatusFields(ret) {
 
   return ret
 }
+
 function mapReading(doc) {
-  let re=RegExp(props.bibRegex ? `^${props.bibRegex}$` : '^\\d{3,5}$')
+  let regExp = getBibRegExp()
   let data = doc.data()
   data.id=doc.id 
   data.name=NOMATCH
   
   if (!data.hasOwnProperty('bib') || doc.id.includes("START")){
-    // console.log('nonBib/START',data)
-  } else if (data.bib.search(re)!=-1) { // matching bib pattern
+    console.log('nonBib/START',data)
+  } else if (data.bib.search(regExp)!=-1) { // matching bib pattern
 
     data.status= data.status || ''// 'valid'
     if(data.hasOwnProperty('timestamp')){
@@ -299,6 +325,7 @@ function mapReading(doc) {
             data.name = bib_found.Name//.Bib
             data.gender = bib_found.Gender
             // if(data.bib=='3178')debugger;
+            // console.log(`${data.bib}: ${bib_found.Name}`)
             if (!data.status && 
                 !config.raceMgt.ingoredBibStatuses   // if not of of these
                   .includes(bib_found.Status))
@@ -361,13 +388,14 @@ const formatDate = (value) => {
 };
 
 function period(ts){
-  ts = typeof ts=='string'? new Date(ts) : ts
+  ts = (typeof ts=='string') ? new Date(ts) : ts
   try {
-    let start = new Date(props.race.timestamp.start)
+    let start = new Date(race.value.timestamp.start)
     var diffTime= ts.valueOf()-start.valueOf()
   } catch {
     return '00:00:00'
   }
+
   try {
     // console.debug(diffTime)
     // let diffTime = Math.abs(new Date().valueOf() - new Date('2021-11-22T18:30:00').valueOf());
@@ -411,7 +439,7 @@ const setStatus=(id,val) =>{
   try{
     e[0].status=val
     // debugger
-    const path = `races/${props.raceId}/readings/${id}`
+    const path = `races/${raceId}/readings/${id}`
     return updateDoc(
         doc(db,path),
         {status: val}
@@ -421,11 +449,11 @@ const setStatus=(id,val) =>{
 
 
 function submitChange(){
-  let re=RegExp(props.bibRegex ? `^${props.bibRegex}$` : '^\\d{3,5}$')
+  let regExp= getBibRegExp()
   
-  if(entries.value[entryToEdit.value].bib.search(re)>=0){
+  if(entries.value[entryToEdit.value].bib.search(regExp)>=0){
     let payload=_.cloneDeep(entries.value[entryToEdit.value])
-    let path=`races/${props.raceId}/readings/${payload.id}`
+    let path=`races/${raceId}/readings/${payload.id}`
     delete payload.id
     // debugger
     // console.debug(typeof payload.timestamp, payload.timestamp)
@@ -453,13 +481,16 @@ Rank "1"
 Start Time "7:10:00" 
   */
 function finalize_results(){
-  console.log("finalizing results")
+  console.log(`finalizing results: ${allEntries.value.length}`)
   const keys_=_.split("bib name timestamp status waypoint gender imagePath"," ")
+
+  // map data
   let results= _.chain(allEntries.value)
             .filter(x=>x.waypoint!='VENUE')
             .filter(x=>'valid split volunteer dnf dns'.includes(x.status.toLowerCase()))
             .map(x=>{
-              let startTime = race?.timestamp.start ? new Date(race?.timestamp.start).toTimeString() : "-";
+              let startTime = race.value?.timestamp.start ? new Date(race.value?.timestamp.start).toTimeString() : "-";
+              // console.debug(typeof x.timestamp)
               return {
                 Bib:  x.bib,
                 Name: x.name,
@@ -468,37 +499,69 @@ function finalize_results(){
                 Category: x.status=='valid' ? `${x.waypoint} - ${x.gender}` : `Other - ${x.status}`,
                 "Start Time":  startTime,
                 "Race Time": period(x.timestamp),
-                "Finish Time": x.timestamp.toTimeString(),
+                "Finish Time": typeof x.timestamp=='string'? x.timestamp : x.timestamp.toTimeString() ,
                 Status: x.status,
                 Rank: ""
             }})
             // .groupBy()
             .value()
+  
+
+
+  // sorted by groups
+  results = groupResultsByValidCategories(results);
+  
+  let ret = _.chain(results)
+              .map(x=>({
+                cat: x.cat,
+                entries: rankResultsByRaceTime(x.entries)
+              }))
+              .value()   
+  debugger;
+  // update each bib in the loop
+  totalFinalizedEntries.value=_.sumBy(ret,x=>x.entries.length)
+
+// Save all entries
+  ret.forEach((category)=>{
+      console.log(`saving ${category.entries.length} entries for ${category.cat}`) ;
+      category.entries.forEach(x=>{
+                  try{
+                    // console.log(`${x.Rank} ${x.Name} ${x['Race Time']}`)
+                    setDoc(doc(db,'races',raceId,'result',x.Bib), x  )
+                      .then(x=> processedFinalizedEntries.value++)
+                  } 
+                  catch(e) {
+                    console.error("error saving",e)
+                  }
+                })
+    })
+
   updateDoc(doc(db,`races/${raceId}`),{
       'timestamp.result' : new Date().toISOString()
     })
-  // update each bib in the loop
-  // debugger;
-  let ret = _.chain(results)
-    .groupBy(x=>x.Category+x.Status)
-    .forIn((catResults,k)=>_.chain(catResults)
-                            .orderBy("Race Time")
-                            .forEach((x,i)=>{  
-                              try{
-                                x.Rank = i+1;
-                                setDoc(doc(db,'races',raceId,'result',x.Bib), x  )
-                              } 
-                              catch(e) {
-                                console.error("error saving",e)
-                              }
-                            })
-                            .value()
-    )
-    .value();
-
   
 
+  function rankResultsByRaceTime(x){
+    return _(x).orderBy("Race Time").map((x,i)=>_.extend(x,{Rank:i+1})).value() 
+  }
+  
+  function groupResultsByValidCategories(results) {
+    return _.chain(results)
+    .groupBy(x => `${x.Category}_${x.Status}`)
+    .map((o, k) => ({
+      cat: k,
+      entries: _.sortBy(o, "Race Time")
+    }))
+    .filter(x => RegExp(/^\d+K\D/).test(x.cat))
+    .tap(console.log)
+    .value();
+    }
 }
+
+function getBibRegExp(){
+  return race.value?.bibPattern ? RegExp(race.value?.bibPattern) : false
+}
+
 
 </script>
 
@@ -528,7 +591,7 @@ div#selections ::v-deep(span) {
 span.valid {
   color: blue;
 }
-span.xbib {
+span.noname {
   color: red;
 }
 span.dup {

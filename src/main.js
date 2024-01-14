@@ -5,7 +5,7 @@ import router from './router'
 import store from './store';
 import PrimeVue from 'primevue/config';
 import Button from 'primevue/button';
-// import ToastService from 'primevue/toastservice';
+import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
 // import 'primevue/resources/themes/saga-blue/theme.css';
 import 'primevue/resources/primevue.min.css';
@@ -28,8 +28,20 @@ app.use(store)
     .use(VueSocialSharing)
     .use(router)
     // PrimeVUE
-    .use(PrimeVue) //{ unstyled: true }
-    // .use(ToastService)
+    .use(PrimeVue,{
+        locale: {
+            fileSizeTypes: ['G','M'],
+            en: {
+            message: "Message",
+            },
+            ja: {
+            message: "メッセージ",
+            },
+            de: {
+            message: "Nachricht",
+            },
+      }},) //{ unstyled: true }
+    .use(ToastService)
 //     // .use(vue3GoogleLogin, {
 //     // clientId: '1008690560612-k8am9a162v8i2psshjidecn0d10adkij.apps.googleusercontent.com'
 //     // } )

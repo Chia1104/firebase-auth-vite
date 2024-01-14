@@ -2,7 +2,7 @@ import { createStore } from "vuex";
 import { countExample } from "./modules/CountExample";
 import { counters } from "./modules/Counters";
 import { auth } from "./modules/Auth";
-import { datastore } from "./modules/datastore";
+import { datastore } from "./races";
 import { actionSheet } from "./modules/ActionSheet";
 
 const store = createStore({

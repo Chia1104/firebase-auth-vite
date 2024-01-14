@@ -23,8 +23,10 @@
     <form>  
       <div class="flex flex-column gap-2 p-float-label">
           <InputText id="bib" v-model="bib" placeholder="Enter a single bib number" 
-            aria-describedby="bib-help" class="w-1/3"/>
-          <Button v-for="d in race?.Distances" @click="recordBib(d)">{{d}}</Button>
+            aria-describedby="bib-help" class="w-1/3 border bg-yellow-50"/>
+          <Button v-for="d in race?.Distances" @click="recordBib(d)" class="text-white p-2 bg-blue-500 hover:bg-blue-400">
+            {{d}}
+          </Button>
       </div>
         <!-- <SelectButton :options="race.Distances" :model="distance"></SelectButton> -->
     </form>

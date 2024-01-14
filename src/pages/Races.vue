@@ -72,12 +72,13 @@ NOP(fsdb);
 <template>
   <div class="container mx-auto">
     
-    <div class="w-full text-center justify-center flex-col">
-      <div id="header flex">
-        <h1 @dblclick="klick" class="text-xl text-center">Races</h1> 
-      </div>
-
-      <div class="card">
+    <Card class="w-full text-center justify-center flex-col rounded">
+      <template #header>
+        <div id="header flex">
+          <h1 @dblclick="klick" class="text-xl text-center">Races</h1> 
+        </div>
+      </template>
+      <template #content>
         <DataTable :value="races"  stripedRows>
             <Column field="id" style="width: 20%"  class="p-1">       
               <template #body="{ data }">         
@@ -88,10 +89,11 @@ NOP(fsdb);
             </Column>
             <Column field="Name" header="Name" sortable  class="p-1">
               <template #body="{ data }">
-                <div class="container">                
-                <small>
-                {{data.id}}</small>
-                <div>{{data.Name}}</div>
+                <div class="container" @click="router.push(`/e/${data.id}`)">
+                  <small>
+                    {{data.id}}
+                  </small>
+                  <div>{{data.Name}}</div>
                 </div>
               </template>
             </Column>
@@ -108,7 +110,7 @@ NOP(fsdb);
             </Column>
             <!-- <Column field="Location" header="Location" sortable></Column> -->
         </DataTable>
-      </div>      
+      
       <!-- <DataTable> -->
         <!-- <tr v-for="r in races" class="w-full flex gap-3 mx-auto">
           <td>
@@ -123,7 +125,8 @@ NOP(fsdb);
 
         <!-- </tr>
       </DataTable>         -->
-    </div>
+      </template>
+    </Card>
 
     <TabView>
       <TabPanel header="Process">
@@ -134,14 +137,14 @@ NOP(fsdb);
       </TabPanel>
       <TabPanel header="Create">
           <p>
-            <div class="flex flex-column gap-2">
-                <label for="newRaceId">Race Id</label>
-                <InputText id="newRaceId" v-model="newRaceId" aria-describedby="raceId-help" />
+            <div class="flex gap-5 mx-5">
+                <!-- <label for="newRaceId">Race Id</label> -->
                 <Button type="button" @click="createNewRace"
                   label="Create"></Button>
+                <InputText id="newRaceId" v-model="newRaceId" aria-describedby="raceId-help" class="w-1/3 border"/>
+
             </div>
             <small id="username-help">Enter your id for the Race.  Only a-z0-9. All lowercase. No space </small>
-                
           </p>
       </TabPanel>
       <TabPanel header="Record">

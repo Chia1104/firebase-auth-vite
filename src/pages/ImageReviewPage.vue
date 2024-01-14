@@ -91,8 +91,9 @@ import { getDocData , getPublicUrl} from "../api"
 import { db, storage } from "../../firebase/config" 
 // import { ref as dbRef, getDownloadURL } from "firebase/storage";
 import { collection,query,doc, onSnapshot, updateDoc,getDocs } from "firebase/firestore";
+import { config } from '../config';
 
-const GS_PREFIX='https://storage.googleapis.com/run-pix.appspot.com/'
+const GS_PREFIX=config.GS_PREFIX
 const store = useStore()
 const route = useRoute()
 

@@ -38,7 +38,7 @@
       multiple aria-labelledby="multiple" />
 
     <div v-for="(v,k) in race.timestamp">
-      {{k}} : {{v}}
+      {{k}} : {{getLocalDateTime(v)}} <span class="text-sm italics">{{ v }}</span>
     </div>
     
     <Inplace :disabled="!editable">
@@ -51,11 +51,12 @@
         </template>
     </Inplace>
     
-    <ToggleButton v-model="editable" onLabel="Review" offLabel="Edit"
-    onIcon="pi pi-edit" offIcon="pi pi-no" class="w-9rem" />
-    <Button :disabled="!editable" @click="saveChanges">Save Changes</Button>
-    <Button :disabled="!editable" @click="flagOff">Flag Off</Button>
-    
+    <div class="flex-row">
+      <ToggleButton v-model="editable" onLabel="Review" offLabel="Edit"
+      onIcon="pi pi-edit" offIcon="pi pi-no" class="w-9rem bg-blue-500 hover:bg-blue-400" />
+      <Button :disabled="!editable" @click="saveChanges" class="w-9rem bg-blue-500 hover:bg-blue-400">Save Changes</Button>
+      <Button :disabled="!editable" @click="flagOff" class="w-9rem bg-blue-500 hover:bg-blue-400">Flag Off</Button>
+    </div>
   </form>
   <div>
     TODO:  racelogo, raceorg, racelink:{racelink,raceorg,reg,result,pic}
@@ -69,13 +70,15 @@ import Inplace from 'primevue/inplace';
 import InputText from 'primevue/inputtext';
 import Chips from 'primevue/chips'
 import ToggleButton from 'primevue/togglebutton';
-import Dropdown from 'primevue/dropdown';
+// import Dropdown from 'primevue/dropdown';
 import { useStore } from 'vuex';
 import { computed ,ref, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { doc, getDoc ,updateDoc, setDoc } from 'firebase/firestore'
 import {db} from '../../firebase/config'
 import _ from "lodash"
+import { getLocalDateTime  } from '../helpers';
+import { config } from '../config';
 
 // let js=(x)=>JSON.parse(JSON.stringify(x))
 let getArr=(x,sep=',')=> (x && typeof x ==  "string" )? x.split(sep): x 
@@ -103,18 +106,7 @@ let race=computed(()=>{
   } else return {name:'-',Waypoints:['VENUE']}
   });
 
-const labels={
-  id:'Id',
-  Name: 'Name',
-  Location: 'Location',
-  Date : {label:'Date',mask:'9999-99-99',placeholder:'YYYY-MM-DD'},
-  linkRace: 'Race link',
-  linkReg: 'Registration link',
-  raceOrg: 'Event Organizer',
-  linkOrg: 'Organizer link',
-  linkResults: 'Results link',
-  linkPhotos: 'Photos link',
-}
+const labels=config.raceInfoPanelLabels
 const arrayLabels={
   'Waypoints':'Waypoints',
   'Distances':'Distances'
@@ -182,5 +174,14 @@ let klick=() => {
 .p-button-label{
   margin: 0;
   color: red;
+}
+
+ToggleButton,
+Button {
+  padding: .5rem;
+  vertical-align: middle;
+  height: 3rem;
+  margin-inline: 1em;
+  /* color: red; */
 }
 </style>
